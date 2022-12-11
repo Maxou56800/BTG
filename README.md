@@ -4,7 +4,7 @@ Not every IOC deserve to enter your internal MISP instance, for obvious quality 
 
 This tool allows you to qualify one or more potential malicious observables of various type (URL, MD5, SHA1, SHA256, SHA512, IPv4, IPv6, domain etc..). You can run this tool with a Linux environement.
 
-![BTG with TOR IP](http://pix.toile-libre.org/upload/original/1482330236.png)
+![BTG Demo](./img/btg.png)
 
 The [first versions](https://github.com/conix-security/BTG) were developed by Conix collaborators. [This fork](https://github.com/Maxou56800/BTG) aims to keep this project updated by the community, for the community. Suggestions for improvement, new contributors are welcome !
 
@@ -65,12 +65,11 @@ BTG needs a redis server. You can install it on the same host:
 apt install redis-server
 ```
 
-##### Install requirements and clone the project
+##### Install requirements and clone the project
 
 ```
 $ sudo apt update && sudo apt install python3 python3-pip git
 $ git clone https://github.com/conix-security/BTG
-
 ```
 
 ##### Install using poetry
@@ -112,7 +111,6 @@ Exemple:
 ```
 $ cd BTG
 $ poetry run btg http://mydomain.com 1a72dca1f6a961f528007ef04b6959d8 45.34.191.173
-
 ```
 
 If you installed BTG using the second method:
