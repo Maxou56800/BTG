@@ -20,10 +20,11 @@
 
 import json
 import random
+import base64
 
 from BTG.lib.async_http import store_request
 from BTG.lib.io import module as mod
-
+from BTG.lib.io import colors
 
 class metadefender:
     """
@@ -32,7 +33,7 @@ class metadefender:
     def __init__(self, ioc, type, config, queues):
         self.config = config
         self.module_name = __name__.split(".")[-1]
-        self.types = ["MD5", "SHA1", "SHA256", "SHA512"]
+        self.types = ["MD5", "SHA1", "SHA256", "SHA512", "domain", "URL", "IPv4", "IPv6"]
         self.search_method = "Online"
         self.description = "Search IOC in MetaDefender"
         self.author = "Conix"
@@ -48,7 +49,6 @@ class metadefender:
 
     def Search(self):
         mod.display(self.module_name, "", "INFO", "Search in MetaDefender ...")
-
         try:
             if 'metadefender_api_keys' in self.config:
                 try:
@@ -71,24 +71,48 @@ class metadefender:
             return None
 
         # URL building
-        self.url = "https://api.metadefender.com/v2/hash/"+self.ioc
+        self.url = "https://api.metadefender.com"
+        if self.type in ["MD5", "SHA1", "SHA256", "SHA512"]:
+            self.url = "{}/v4/hash/{}".format(self.url , self.ioc)
+        elif self.type == "domain":
+            self.url = "{}/v4/domain/{}".format(self.url , self.ioc)
+        elif self.type == "URL":
+            self.url = "{}/v4/url/{}".format(self.url , self.ioc)
+        elif self.type in ["IPv4", "IPv6"]:
+            self.url = "{}/v4/ip/{}".format(self.url , self.ioc)
 
-        request = {'url': self.url,
-                   'headers': self.headers,
-                   'module': self.module_name,
-                   'ioc': self.ioc,
-                   'verbose': self.verbose,
-                   'proxy': self.proxy
-                   }
+        request = {
+            'url': self.url,
+            'headers': self.headers,
+            'module': self.module_name,
+            'ioc': self.ioc,
+            'ioc_type': self.type,
+            'verbose': self.verbose,
+            'proxy': self.proxy
+        }
 
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
+def get_color(positives):
+    if positives == 0:
+        return "{}{}{}{}".format(
+            colors.GOOD,
+            positives,
+            colors.NORMAL,
+            colors.BOLD
+        )
+    return "{}{}{}{}".format(
+            colors.INFECTED,
+            positives,
+            colors.NORMAL,
+            colors.BOLD
+        )
+
 
 def response_handler(response_text, response_status,
-                     module, ioc, server_id=None):
+                     module, ioc, ioc_type, server_id=None, ):
     if response_status == 200:
-        url_result = "https://www.metadefender.com/results#!/hash/"
         try:
             json_response = json.loads(response_text)
         except:
@@ -97,38 +121,97 @@ def response_handler(response_text, response_status,
                         "ERROR",
                         "MetaDefender json_response was not readable.")
             return None
-        if ioc in json_response:
-            if json_response[ioc] == "Not Found":
+
+        if ioc_type == "URL":
+            url_result = "https://metadefender.opswat.com/results/url/{}/overview"
+            if json_response["lookup_results"]["detected_by"] == 0:
                 mod.display(module,
                             ioc,
                             "NOT_FOUND",
-                            "Nothing found in MetaDefender")
-        elif ioc.upper() in json_response:
-            if json_response[ioc.upper()] == "Not Found":
+                            "Zero AV detected malicious activity")
+                return None
+            mod.display(module,
+                        ioc,
+                        "FOUND",
+                        "AV {}/{} | {}".format(
+                            get_color(json_response["lookup_results"]["detected_by"]),
+                            len(json_response["lookup_results"]["sources"]),
+                            url_result.format(base64.b64encode(ioc.encode()).decode())))
+
+        if ioc_type == "domain":
+            url_result = "https://metadefender.opswat.com/results/domain/{}/overview"
+            if json_response["lookup_results"]["detected_by"] == 0:
                 mod.display(module,
                             ioc,
                             "NOT_FOUND",
-                            "Nothing found in MetaDefender")
-        elif json_response['scan_results']['scan_all_result_a'] == "No Threat Detected":
-            mod.display(module,
-                        ioc,
-                        "NOT_FOUND",
-                        "Nothing found in MetaDefender database")
-        elif json_response['scan_results']['scan_all_result_a'] == "Clear":
+                            "Zero AV detected malicious activity")
+                return None
             mod.display(module,
                         ioc,
                         "FOUND",
-                        url_result+json_response['data_id'])
-        elif json_response['scan_results']['scan_all_result_a'] == "Infected" or json_response['scan_results']['scan_all_result_a'] == "Suspicious":
+                        "AV {}/{} | {}".format(
+                            get_color(json_response["lookup_results"]["detected_by"]),
+                            len(json_response["lookup_results"]["sources"]),
+                            url_result.format(base64.b64encode(ioc.encode()).decode())))
+        elif ioc_type in ["IPv4", "IPv6"]:
+            url_result = "https://metadefender.opswat.com/results/ip/{}/overview"
+            if json_response["lookup_results"]["detected_by"] == 0:
+                mod.display(module,
+                            ioc,
+                            "NOT_FOUND",
+                            "Zero AV detected malicious activity")
+                return None
             mod.display(module,
                         ioc,
                         "FOUND",
-                        url_result+json_response['data_id'])
-        else:
-            mod.display(module,
-                        ioc,
-                        "ERROR",
-                        "MetaDefender json_response was not as expected, API may has been updated.")
+                        "AV {}/{} | Country: {} | City: {} | {}".format(
+                            get_color(json_response["lookup_results"]["detected_by"]),
+                            len(json_response["lookup_results"]["sources"]),
+                            json_response["geo_info"]["country"]["name"],
+                            json_response["geo_info"]["city"]["name"],
+                            url_result.format(base64.b64encode(ioc.encode()).decode()))
+            )
+        elif ioc_type in ["MD5", "SHA1", "SHA256", "SHA512"]:
+            url_result = "https://metadefender.opswat.com/results/file/{}/hash/overview"
+            
+
+            if json_response['scan_results']['scan_all_result_a'] == "No Threat Detected":
+                mod.display(module,
+                            ioc,
+                            "NOT_FOUND",
+                            "Nothing found in MetaDefender database")
+            if json_response['scan_results']['scan_all_result_a'] == "In queue":
+                mod.display(module,
+                            ioc,
+                            "NOT_FOUND",
+                            "Sample in queue, try again later.")
+            elif json_response['scan_results']['scan_all_result_a'] == "Clear":
+                mod.display(module,
+                            ioc,
+                            "FOUND",
+                            url_result.format(ioc))
+            elif json_response['scan_results']['scan_all_result_a'] == "Infected" or \
+                 json_response['scan_results']['scan_all_result_a'] == "Suspicious" or \
+                 json_response['scan_results']['scan_all_result_a'] == "File is infected, see description":
+                mod.display(module,
+                            ioc,
+                            "FOUND",
+                            "AV {}/{} | {}".format(get_color(json_response['scan_results']['total_detected_avs']), json_response['scan_results']['total_avs'], url_result.format(ioc)))
+            else:
+                mod.display(module,
+                            ioc,
+                            "DEBUG",
+                            json.dumps(json_response, indent=4))
+                mod.display(module,
+                            ioc,
+                            "ERROR",
+                            "MetaDefender json_response was not as expected, API may has been updated.")
+    elif response_status == 404:
+        mod.display(module,
+            ioc,
+            "NOT_FOUND",
+            "Nothing found in MetaDefender")
+    
     else:
         mod.display(module,
                     ioc,

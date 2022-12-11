@@ -78,15 +78,14 @@ class cluster:
                 cluster['nb_module'] = cluster['nb_module'] + len(config['viper_server']) - 1
             elif module == "misp":
                 cluster['nb_module'] = cluster['nb_module'] + len(config['misp_url']) - 1
+            elif module == "mwdb":
+                cluster['nb_module'] = cluster['nb_module'] + len(config['misp_url']) - 1
         conn.lpush(dictname, json.dumps(cluster))
 
     def edit_cluster(ioc, module, message, conn, lockname, dictname):
         c = None
         locked = cluster.acquire_lock(conn, lockname)
         bytes_clusters = conn.lrange(dictname, 0, -1)
-        # Exceptions where module name logged isn't the same as module.py
-        if len(module.split("malekal")) > 1:
-            module = "malekal"
         for bytes_cluster in bytes_clusters:
             try:
                 c = json.loads(bytes_cluster.decode("utf-8"))
@@ -112,9 +111,10 @@ class cluster:
             for message in cluster['messages']:
                 if message['type'] == "FOUND":
                     found = True
-                    print(message['string'])
+                    #print(message['string'])
             if found:
-                print('')
+                pass
+                #print('')
 
     def get_clusters(dictname, conn):
         bytes_clusters = conn.lrange(dictname, 0, -1)

@@ -19,10 +19,11 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 import re
-import requests
+import json
 
+from BTG.lib.async_http import store_request
 from BTG.lib.io import module as mod
-
+from BTG.lib.io import colors
 
 class Virusshare:
     def __init__(self, ioc, type, config, queues):
@@ -36,131 +37,86 @@ class Virusshare:
         self.type = type
         self.ioc = ioc
         self.queues = queues
-        self.verbose = "POST"
+        self.verbose = "GET"
         self.headers = self.config["user_agent"]
-
+        self.proxy = self.config["proxy_host"]
         self.search()
 
-    def search_ioc(self):
-        search_url = "https://virusshare.com/search.4n6"
-        login_url = "https://virusshare.com/processlogin.4n6"
-        login_page = "https://virusshare.com/login.4n6"
-
-        auth = {'username': self.config['virusshare_username'],
-                'password': self.config['virusshare_password']
-                }
-
-        header = {'User-Agent': self.config['user_agent']['User-Agent'],
-                  'Host': 'virusshare.com',
-                  'Referer': 'https://virusshare.com/',
-                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                  'Accept-Language': 'en-US,en;q=0.5',
-                  'DNT': '1',
-                  'Upgrade-Insecure-Requests': '1',
-                  'connection': 'close'
-                  }
-
-        try:
-            session = requests.Session()
-            session.get(login_page, headers=header)
-            authentification = session.post(login_url, data=auth)
-            if authentification.status_code == 200:
-                result = session.post(search_url, data={'search': self.ioc,
-                                                        'start': '0'})
-                if result.status_code == 200:
-                    return result.content
-                else:
-                    return None
-            else:
-                return None
-
-        except:
-            raise
-            return None
-
-    def extract_information(self, data):
-        '''
-        Extract all information page from VirusShare
-        '''
-        try:
-            md5 = re.findall(r'(?<=<td>MD5<\/td><td>)[^<]*', data)
-            if md5:
-                md5 = md5[0]
-            else:
-                md5 = ""
-
-            sha1 = re.findall(r'(?<=<td>SHA1<\/td><td>)[^<]*', data)
-            if sha1:
-                sha1 = sha1[0]
-            else:
-                sha1 = ""
-
-            sha256 = re.findall(r'(?<=<td>SHA256<\/td><td>)[^<]*', data)
-            if sha256:
-                sha256 = sha256[0]
-            else:
-                sha256 = ""
-
-            file_type = re.findall(r'(?<=<td>File\ Type<\/td><td\ colspan=2>)[^<]*', data)
-            if file_type:
-                file_type = file_type[0].replace("\n", "")
-            else:
-                file_type = ""
-
-            detections = re.findall(r'(?<=Detections<\/td><td\ colspan=2><pre>)[^<]*', data)
-            if detections:
-                detections = detections[0]
-            else:
-                detections = ""
-
-            data = {'MD5': md5,
-                    'SHA1': sha1,
-                    'SHA256': sha256,
-                    'DETECTIONS': detections,
-                    }
-
-            return data
-
-        except:
-            raise
-            return {}
-
-    def check_ioc(self, data, extract_info):
-        '''
-        Check if IOC Hash is found in VirusShare
-        '''
-        if not 'Search for "%s" returned no results.' % self.ioc in data:
-
-            hashs = [extract_info['MD5'],
-                     extract_info['SHA1'],
-                     extract_info['SHA256'],
-                     ]
-            if self.ioc in hashs:
-                return True
-            else:
-                return False
-        elif 'NO BOTS! NO SCRAPERS!' in data:
+    def search(self):
+        if "virusshare_apikey" not in self.config:
             mod.display(self.module_name,
                         self.ioc,
                         "ERROR",
-                        "VirusShare login failed!")
-            return False
-        else:
-            return False
+                        "You must specify an API key in btg.cfg")
+            return None
+        self.apikey = self.config['virusshare_apikey']
+        self.url = "https://virusshare.com/apiv2/file?apikey={}&hash={}".format(self.apikey, self.ioc)
 
-    def search(self):
+        request = {
+            'url': self.url,
+            'headers': self.headers,
+            'module': self.module_name,
+            'ioc': self.ioc,
+            'ioc_type': self.type,
+            'verbose': self.verbose,
+            'proxy': self.proxy
+        }
+
+        json_request = json.dumps(request)
+        store_request(self.queues, json_request)
+
+def get_color(positives):
+    if positives == 0:
+        return "{}{}{}{}".format(
+            colors.GOOD,
+            positives,
+            colors.NORMAL,
+            colors.BOLD
+        )
+    return "{}{}{}{}".format(
+            colors.INFECTED,
+            positives,
+            colors.NORMAL,
+            colors.BOLD
+        )
+
+def response_handler(response_text, response_status,
+                     module, ioc, ioc_type, server_id=None, ):
+    if response_status == 200:
         try:
-            mod.display(self.module_name, "", "INFO", "Searching...")
-            data_page = self.search_ioc()
-            extract_info = self.extract_information(data_page)
-            if self.check_ioc(data_page, extract_info):
-                mod.display(self.module_name,
-                            self.ioc,
-                            "FOUND",
-                            "Score: %d | %s" % (len(extract_info['DETECTIONS'].split("\n"))-1, "https://virusshare.com/"))
-
+            json_response = json.loads(response_text)
         except:
-            mod.display(self.module_name,
-                        self.ioc,
+            mod.display(module,
+                        ioc,
+                        "ERROR",
+                        "VirusShare json_response was not readable.")
+            return None
+
+        if "response" in json_response and json_response["response"] == 0:
+                mod.display(module,
+                        ioc,
                         "NOT_FOUND",
-                        "Nothing found in virusshare DB")
+                        "VirusShare unable to reply a response")
+                return None
+        
+        url_result = "https://virusshare.com/file?{}".format(json_response["sha256"])
+        mod.display(module,
+                    ioc,
+                    "FOUND",
+                    "AV {}/{} | {}".format(
+                        get_color(json_response["virustotal"]["positives"]),
+                        len(json_response["virustotal"]["scans"]),
+                        url_result))
+    elif response_status == 204:
+        mod.display(module,
+                            ioc,
+                            "NOT_FOUND",
+                            "No hash found")
+        return None
+    else:
+        mod.display(module,
+                    ioc,
+                    message_type="ERROR",
+                    string="MetaDefender response.code_status : %d" % (response_status))
+        return None
+    return None

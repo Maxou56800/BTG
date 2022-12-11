@@ -45,21 +45,23 @@ class Irish():
 
     def search(self):
         mod.display(self.module_name, "", "INFO", "Searching...")
-        self.url = "https://iris-h.services/api/search?hash=" + self.ioc
+        self.url = "https://iris-h.services/api/v2/search?hash=" + self.ioc
 
-        request = {'url': self.url,
-                   'headers': self.headers,
-                   'module': self.module_name,
-                   'ioc': self.ioc,
-                   'verbose': self.verbose,
-                   'proxy': self.proxy
-                   }
+        request = {
+            'url': self.url,
+            'headers': self.headers,
+            'module': self.module_name,
+            'ioc': self.ioc,
+            'ioc_type': self.type,
+            'verbose': self.verbose,
+            'proxy': self.proxy
+        }
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
 
 def response_handler(response_text, response_status, module,
-                     ioc, server_id=None):
+                     ioc, ioc_type, server_id=None):
     if response_status == 200:
         try:
             json_content = json.loads(response_text)
@@ -69,18 +71,18 @@ def response_handler(response_text, response_status, module,
                         message_type="ERROR",
                         string="Irish json_response was not readable.")
             return None
-        if not ("No report exists for %s hash" % (ioc)) in json_content:
+        if "You have to try harder!" in json_content:
             mod.display(module,
-                        ioc,
-                        "FOUND",
-                        "URL: https://iris-h.services/report/%s" % (ioc))
+                ioc,
+                "NOT_FOUND",
+                "Nothing found in irsih DB"
+            )
             return None
-        else:
-            mod.display(module,
-                        ioc,
-                        "NOT_FOUND",
-                        "Nothing found in irsih DB")
-            return None
+        mod.display(module,
+                    ioc,
+                    "FOUND",
+                    "URL: https://iris-h.services/pages/report/%s" % (ioc))
+        return None
     elif response_status == 404:
         mod.display(module,
                     ioc,

@@ -59,7 +59,7 @@ class Sslblacklist():
                     mod.display(self.module_name,
                                 self.ioc,
                                 "FOUND",
-                                "%s | %s%s" % (infos[2], url, path))
+                                "%s - %s%s" % (infos[2], url, path))
                     return None
         mod.display(self.module_name,
                     self.ioc,

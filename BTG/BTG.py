@@ -38,6 +38,8 @@ import sys
 import time
 import tldextract
 import validators
+import ipaddress
+import json
 
 from BTG.lib.config_parser import Config
 from BTG.lib.io import colors
@@ -49,7 +51,7 @@ from BTG.lib.utils import cluster, pidfile, redis_utils
 from BTG.lib.worker_tasks import module_worker_request
 
 config = Config.get_instance()
-version = "2.2"     # BTG version
+version = "2.3"     # BTG version
 
 
 class BTG():
@@ -88,13 +90,21 @@ class BTG():
 
         for argument in observable_list:
             type = self.checkType(argument.lower())
+            if type in ["IPv4", "IPv6"] and ipaddress.ip_address(argument).is_private:
+                mod.display("MAIN",
+                    message_type="WARNING",
+                    string="IOC '{}' is a {} private address and excluded from research".format(argument, type))
+                continue
             if "split_observable" in config and config["split_observable"]:
                 if type == "URL" or type == "domain":
                     self.extend_IOC(argument.lower(), observable_list)
+
             matching_list = Utils.gen_matching_type_modules_list(modules, type)
             cluster.add_cluster(argument.lower(), matching_list, dictname, conn)
             self.run(argument.lower(), type, matching_list, queues)
-        print("Every IOCs have been enqueued, BTG is processing ...\n")
+        mod.display("MAIN",
+                    message_type="INFO",
+                    string="Every IOCs have been enqueued, BTG is processing ...")
 
     def extend_IOC(self, argument, observable_list):
         """
@@ -127,7 +137,7 @@ class BTG():
         domains = [registered_domain, suffix_domain, complete_domain]
 
         IPs = [None, None, None]
-        if not config["offline"]:
+        if not config["offline"] and config["split_observable_resolve_domain"]:
             for domain in domains:
                 try:
                     IP = socket.gethostbyname(domain)
@@ -170,7 +180,7 @@ class BTG():
         """
         if not argument or len(argument.strip()) == 0:
             return None
-        elif argument[0] is '#':
+        elif argument[0] == '#':
             return None
         elif validators.url(argument):
             return "URL"
@@ -234,7 +244,7 @@ class Utils:
                         for module in modules:
                             if row:
                                 if module == row[0]:
-                                    types = row[1].split(', ')
+                                    types = row[1].split(',')
                                     if type in types and mod.allowedToSearch(row[2]):
                                         matching_list.append(module)
                 except:
@@ -284,6 +294,8 @@ class Utils:
         end_time = end_time.strftime('%d-%m-%Y %H:%M:%S')
         for line in lines:
             match = regex.findall(line)
+            if len(match) == 0:
+                continue
             log_time = match[0]
             log_module = match[1]
             if log_time >= start_time and log_time <= end_time:
@@ -323,11 +335,10 @@ class Utils:
                             metavar='observable',
                             type=str, nargs='+',
                             help='Type: [URL,MD5,SHA1,SHA256,SHA512,IPv4,IPv6,domain] or a file containing one observable per line')
-        # TODO
-        # parser.add_argument("-d",
-        #                     "--debug",
-        #                     action="store_true",
-        #                     help="Display debug informations")
+        parser.add_argument("-d",
+                            "--debug",
+                            action="store_true",
+                            help="Display debug informations")
         parser.add_argument("-o",
                             "--offline",
                             action="store_true",
@@ -416,13 +427,33 @@ class Utils:
                 d[i], rem = divmod(rem, lst[i])
         return f.format(fmt, **d)
 
-    def save_json_output(json):
-        json_file ="%s.json" % datetime.now().strftime('[%d-%m-%Y %H:%M:%S]')
+    def tune_json_output(json_output, now_str, nb_modules, nb_ioc, duration_str):
+        new_json = {}
+        new_json["finished_date"] = now_str
+        new_json["research_duration"] = duration_str
+        new_json["nb_module"] = nb_modules
+        new_json["nb_ioc"] = nb_ioc
+        new_json["offline_mode"] = config["offline"]
+        new_json["iocs"] = []
+        for ioc_element in json_output:
+            modules_used_for_ioc = len(ioc_element["modules"])
+            ioc_element["nb_module"] = modules_used_for_ioc
+            new_json["iocs"].append(ioc_element)
+
+        return new_json
+
+    def save_json_output(json_output, nb_modules, nb_ioc, duration_str):
+        now_str = datetime.now().strftime('%d-%m-%Y_%H:%M:%S')
+        json_file ="{}.json".format(now_str)
         json_file_path = "%s/%s" % (json_folder, json_file)
+        json_output = Utils.tune_json_output(json_output, now_str, nb_modules, nb_ioc, duration_str)
         try:
             with open(json_file_path, "w+") as f:
                 try:
-                    f.write(json)
+                    if config["display_motd"]:
+                        f.write(json.dumps(json_output, indent=4))
+                    else:
+                        f.write(json.dumps(json_output))
                 except:
                     raise IOError("Could not write in %s" % json_file_path)
                     return None
@@ -444,8 +475,8 @@ class Utils:
         else:
             args.file = "False"
         # Check if debug
-        # if args.debug:
-        #     config["debug"] = True
+        if args.debug:
+             config["debug"] = True
         if args.offline:
             config["offline"] = True
         # Check if silent mode
@@ -559,27 +590,32 @@ def main(argv=None):
         end_time = datetime.now()
         errors_to_display = Utils.show_up_errors(start_time, end_time, modules)
         err.display(dict_list=errors_to_display)
+
+
+
+        nb_ioc = len(observable_list)
+        nb_modules = len(enabled_modules)
+        delta_time = Utils.strfdelta((end_time - start_time),
+                                     "{H:02}h {M:02}m {S:02}s")
         if json_query:
             try:
-                Utils.save_json_output(json_output)
+                json_output = json.loads(json_output)
+                Utils.save_json_output(json_output, nb_modules, nb_ioc, delta_time)
             except Exception as e:
                 mod.display("MAIN",
                             message_type="ERROR",
                             string="Could not save json results: %s" % e)
-
-        delta_time = Utils.strfdelta((end_time - start_time),
-                                     "{H:02}h {M:02}m {S:02}s")
-        print("\nAll works done:\n   in %s" % (delta_time))
-        nb_IOC = len(observable_list)
-        nb_modules = len(enabled_modules)
-        if nb_IOC <= 1:
-            print("   for %d IOC" % (nb_IOC))
-        else:
-            print("   for %d IOCs" % (nb_IOC))
-        if nb_modules <= 1:
-            print("   with %d module enabled\n" % (nb_modules))
-        else:
-            print("   with %d modules enabled\n" % (nb_modules))
+        if config["display_end_stats"]:
+            
+            print("\nAll works done:\n   in %s" % (delta_time))
+            if nb_ioc <= 1:
+                print("   for %d IOC" % (nb_ioc))
+            else:
+                print("   for %d IOCs" % (nb_ioc))
+            if nb_modules <= 1:
+                print("   with %d module enabled\n" % (nb_modules))
+            else:
+                print("   with %d modules enabled\n" % (nb_modules))
 
         try:
             remove(fp)
@@ -590,7 +626,6 @@ def main(argv=None):
                         "FATAL_ERROR",
                         "Could not delete %s, make sure to delete it for next usage" % fp)
             sys.exit()
-
 
     except (KeyboardInterrupt, SystemExit):
         '''

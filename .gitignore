@@ -1,0 +1,7 @@
+# Python
+/BTG.egg-info
+/build
+/dist
+
+# Dev
+/.vscode

@@ -28,7 +28,7 @@ def module_worker_request(module, argument, type, queues):
     """
         Load modules in python instance to build url to request
     """
-    mod.display(string="Load: %s/%s.py" % (config["modules_folder"], module))
+    mod.display(string="Load: {}{}.py".format(config["modules_folder"], module))
     obj = importlib.import_module("BTG.modules."+module)
     for c in dir(obj):
         if module+"_enabled" in config:
@@ -37,19 +37,19 @@ def module_worker_request(module, argument, type, queues):
         else:
             mod.display("worker_tasks",
                         "INFO",
-                        "Module : %s -- not configured" % (module))
+                        "Module : {} -- not configured".format(module))
 
 
 def module_worker_response(response_text, response_status, module,
-                           ioc, server_id):
+                           ioc, ioc_type, server_id):
     """
         Load modules in python instance to treat the response
     """
     obj = importlib.import_module("BTG.modules."+module)
     try:
         obj.response_handler(response_text, response_status,
-                             module, ioc, server_id)
+                             module, ioc, ioc_type, server_id)
     except:
         mod.display("worker_tasks",
                     "ERROR",
-                    "Something went wrong when worker try to load response_handler from %s" % (module))
+                    "Something went wrong when worker try to load response_handler from {}".format(module))

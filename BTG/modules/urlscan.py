@@ -16,7 +16,7 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 import json
-import xml.etree.ElementTree as ET
+import urllib.parse
 
 from BTG.lib.async_http import store_request
 from BTG.lib.config_parser import Config
@@ -26,13 +26,13 @@ from BTG.lib.io import colors
 cfg = Config.get_instance()
 
 
-class DShield:
+class urlscan:
     def __init__(self, ioc, type, config, queues):
         self.config = config
         self.module_name = __name__.split(".")[-1]
-        self.types = ["IPv4", "IPv6"]
+        self.types = ["URL"]
         self.search_method = "Online"
-        self.description = "Search IOC in DShield database"
+        self.description = "Search IOC in urlscan database"
         self.type = type
         self.ioc = ioc
         self.queues = queues
@@ -40,14 +40,12 @@ class DShield:
         self.proxy = self.config['proxy_host']
         self.verify = True
         self.headers = self.config["user_agent"]
-        if self.type not in self.types:
-            return None
+
         self.Search()
 
     def Search(self):
-        mod.display(self.module_name, "", "INFO", "Search in DShield...")
-        
-        url = "https://www.dshield.org/api/ip/{}".format(self.ioc)
+        mod.display(self.module_name, self.ioc, "INFO", "Search in urlscan...")
+        url = 'https://urlscan.io/api/v1/search/?q=task.url:"{}"'.format(self.ioc.replace('"', "%22").replace("\\", "%5c"))
         request = {
             'url': url,
             'headers': self.headers,
@@ -61,53 +59,43 @@ class DShield:
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
-def get_color(positives):
-    if positives == 0:
-        return "{}{}{}{}".format(
-            colors.GOOD,
-            positives,
-            colors.NORMAL,
-            colors.BOLD
-        )
-    return "{}{}{}{}".format(
-            colors.INFECTED,
-            positives,
-            colors.NORMAL,
-            colors.BOLD
-        )
-
 def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     if response_status == 200:
-        root = ET.fromstring(response_text)
-        total_reports = 0
-        honeypot_attacks = 0
-        for element in root:
-            if element.tag == "count":
-                if element.text:
-                    total_reports = int(element.text)
-            elif element.tag == "attacks":
-                if element.text:
-                    honeypot_attacks = int(element.text)
-
-        if total_reports == 0 and honeypot_attacks == 0:
+        try:
+            json_response = json.loads(response_text)
+        except:
+            mod.display(module,
+                        ioc,
+                        message_type="ERROR",
+                        string="urlscan json_response was not readable.")
+            return None
+        if json_response["total"] == 0:
             mod.display(module,
                     ioc,
                     "NOT_FOUND",
-                    "No reports and no honeypot attacks from this IP address"
-            )
+                    "This addresse IP seem to be clean for urlscan")
+            return None
+        search_url = 'https://urlscan.io/search/#{}'.format(urllib.parse.quote('task.url:"'+ioc+'"'))
+        nb_elements = len(json_response["results"])
+        all_tags = []
+        for element in json_response["results"]:
+            if "tags" in element["task"]:
+                for tag in element["task"]["tags"]:
+                    all_tags.append(tag)
+        if len(all_tags) == 0:
+            mod.display(module,
+                    ioc,
+                    "NOT_FOUND",
+                    "No tags attribute, you need to check manualy | Search URL: {}".format(search_url))
             return None
         mod.display(module,
                     ioc,
-                    message_type="FOUND",
-                    string=" | ".join([
-                        "Total reports: {}".format(get_color(total_reports)),
-                        "Total honeypot attacks: {}".format(get_color(honeypot_attacks)),
-                    ])
+                    "FOUND",
+                    "Tags: {} | Search URL: {}".format(", ".join(all_tags), search_url)
         )
-
         return None
     else:
         mod.display(module,
                     ioc,
                     message_type="ERROR",
-                    string="DShield connection status : %d" % (response_status))
+                    string="urlscan connection status : %d" % (response_status))

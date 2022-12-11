@@ -20,6 +20,8 @@
 
 import ast
 import os
+import sys
+
 try:
     from ConfigParser import ConfigParser
 except:
@@ -42,9 +44,18 @@ class Config():
     @staticmethod
     def _parse_config():
         conf = ConfigParser()
-        cfile = os.path.expanduser("~/.config/BTG/btg.cfg")
+        env_config_file = os.environ.get('BTG_CONFIG')
+        if env_config_file:
+            config_path = env_config_file
+        else:
+            config_path = "~/.config/BTG/btg.cfg"
+        cfile = os.path.expanduser(config_path)
         if not os.path.isfile(cfile):
-            print("BTG is not configured.\nPlease take care of config file : ~/.config/BTG/btg.cfg")
-            exit(0)
-        conf.read(cfile)
+            print("BTG is not configured.\nPlease take care of config file : {}".format(config_path))
+            sys.exit(0)
+        try:
+            conf.read(cfile)
+        except Exception as e:
+            print("Fatal error: Your config file '{}' is not conform: {}".format(config_path, e))
+            sys.exit(0)
         Config.__args = {option: ast.literal_eval(conf.get(section, option)) for section in conf.sections() for option in conf.options(section)}

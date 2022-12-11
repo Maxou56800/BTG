@@ -22,12 +22,11 @@
 from BTG.lib.cache import Cache
 from BTG.lib.io import module as mod
 
-
 class Torips:
     def __init__(self, ioc, type, config, queues):
         self.config = config
         self.module_name = __name__.split(".")[-1]
-        self.types = ["IPv4"]
+        self.types = ["IPv4", "IPv6"]
         self.search_method = "Online"
         self.description = "Search an IPv4 in tor exits nodes"
         self.author = "Conix"
@@ -39,11 +38,10 @@ class Torips:
 
     def search(self):
         mod.display(self.module_name, "", "INFO", "Searching...")
-        url = "https://torstatus.blutmagie.de/"
+        url = "https://raw.githubusercontent.com/SecOps-Institute/Tor-IP-Addresses/master/"
         paths = [
-            "ip_list_all.php/Tor_ip_list_ALL.csv",
-            "query_export.php/Tor_query_EXPORT.csv",
-            "ip_list_exit.php/Tor_ip_list_EXIT.csv"
+            "tor-exit-nodes.lst",
+            "tor-nodes.lst",
         ]
         for path in paths:
             try:
@@ -63,4 +61,4 @@ class Torips:
         mod.display(self.module_name,
                     self.ioc,
                     "NOT_FOUND",
-                    "Nothing found in TorIps feeds")
+                    "Nothing found in Tor IPs feeds")

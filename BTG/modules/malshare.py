@@ -54,19 +54,21 @@ class Malshare():
                                                path,
                                                self.search_method).content)
                     saved_urls = []
-                    for malware_url in content["SOURCES"]:
-                        saved_urls.append(malware_url.replace("http", "hxxp"))
-
-                    if not saved_urls:
+                    if "MD5" not in content:
                         mod.display(self.module_name,
-                                    self.ioc,
-                                    "NOT_FOUND",
-                                    "Nothing Found in Malshare feeds")
+                            self.ioc,
+                            "NOT_FOUND",
+                            "Nothing Found in Malshare feeds")
+                        return None
+                    if "SOURCES" in content:
+                        for malware_url in content["SOURCES"]:
+                            saved_urls.append(malware_url.replace("http", "hxxp"))
+
                     else:
                         mod.display(self.module_name,
                                     self.ioc,
                                     "FOUND",
-                                    "https://malshare.com/sample.php?action=detail&hash=" % self.ioc)
+                                    "https://malshare.com/sample.php?action=detail&hash={}".format(self.ioc))
                         return None
                 except NameError:
                     mod.display(self.module_name,
@@ -79,6 +81,7 @@ class Malshare():
                                 "ERROR",
                                 "Malshare connection status : %s" % e)
                 except:
+                    raise
                     mod.display(self.module_name,
                                 self.ioc,
                                 "ERROR",

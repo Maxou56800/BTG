@@ -46,7 +46,12 @@ class Misp:
         self.headers = {'Content-Type': 'application/json','Accept': 'application/json'}
         self.proxy = self.config['proxy_host']
         self.verify = self.config['misp_verifycert']
-
+        if self.config["offline"] and self.config["misp_is_online_instance"]:
+            mod.display(self.module_name,
+                        self.ioc,
+                        "DEBUG",
+                        "MISP search is disabled, because online instance is True and Offline mode is True in config file")
+            return None
         length = len(self.config['misp_url'])
         if length != len(self.config['misp_key']) and length <= 0:
             mod.display(self.module_name,
@@ -72,6 +77,7 @@ class Misp:
                    'data': data,
                    'module': self.module_name,
                    'ioc': self.ioc,
+                   'ioc_type': self.type,
                    'verbose': self.verbose,
                    'proxy': self.proxy,
                    'verify': self.verify,
@@ -81,7 +87,7 @@ class Misp:
         store_request(self.queues, json_request)
 
 
-def response_handler(response_text, response_status, module, ioc, server_id):
+def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     web_url = cfg['misp_url'][server_id]
     if response_status == 200:
         try:

@@ -37,7 +37,12 @@ class Viper:
         self.creation_date = "21-10-2017"
         self.type = type
         self.ioc = ioc
-
+        if self.config["offline"] and self.config["viper_is_online_instance"]:
+            mod.display(self.module_name,
+                        self.ioc,
+                        "DEBUG",
+                        "Viper search is disabled, because online instance is True and Offline mode is True in config file")
+            return None
         length = len(self.config['viper_server'])
         if length != len(self.config['viper_api_key']) and length <= 0:
             mod.display(self.module_name,

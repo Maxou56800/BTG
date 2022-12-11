@@ -24,9 +24,9 @@ import json
 
 from BTG.lib.async_http import store_request
 from BTG.lib.io import module as mod
+from BTG.lib.io import colors
 
-
-class Vxstream:
+class HybridAnalysis:
     def __init__(self, ioc, type, config, queues):
         self.config = config
         self.module_name = __name__.split(".")[-1]
@@ -45,27 +45,27 @@ class Vxstream:
                         'accept': 'application/json'}
         self.proxy = self.config["proxy_host"]
 
-        self.vxstream_api()
+        self.hybridanalysis_api()
 
-    def vxstream_api(self):
+    def hybridanalysis_api(self):
         """
-        VXstream API Connection
+            hybridanalysis API Connection
         """
 
-        if 'vxstream_api_keys' in self.config:
+        if 'hybridanalysis_api_keys' in self.config:
             try:
-                self.headers['api-key'] = random.Random(self.ioc).choice(self.config['vxstream_api_keys'])
+                self.headers['api-key'] = random.Random(self.ioc).choice(self.config['hybridanalysis_api_keys'])
             except:
                 mod.display(self.module_name,
                             self.ioc,
                             "ERROR",
-                            "Check if you have filled vxstream_api_keys_secret in btg.cfg")
+                            "Check if you have filled hybridanalysis_api_keys_secret in btg.cfg")
                 return None
         else:
             mod.display(self.module_name,
                         self.ioc,
                         "ERROR",
-                        "Check if you have vxstream_api_keys_secret field in btg.cfg")
+                        "Check if you have hybridanalysis_api_keys_secret field in btg.cfg")
             return None
 
         if self.type in ["MD5", "SHA1", "SHA256"]:
@@ -85,15 +85,48 @@ class Vxstream:
                    'data': self.data,
                    'module': self.module_name,
                    'ioc': self.ioc,
+                   'ioc_type': self.type,
                    'verbose': self.verbose,
                    'proxy': self.proxy
                    }
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
+def get_color_verdict(verdict):
+    if verdict == "Malicious":
+        return "{}{}{}{}".format(
+                colors.INFECTED,
+                verdict,
+                colors.NORMAL,
+                colors.BOLD
+        )
+    elif verdict == "Suspicious":
+        return "{}{}{}{}".format(
+            colors.SUSPICIOUS,
+            verdict,
+            colors.NORMAL,
+            colors.BOLD
+        )
+    else:
+        return verdict
+
+def get_color_positives(positives):
+    if positives == 0:
+        return "{}{}{}{}".format(
+            colors.GOOD,
+            positives,
+            colors.NORMAL,
+            colors.BOLD
+        )
+    return "{}{}{}{}".format(
+            colors.INFECTED,
+            positives,
+            colors.NORMAL,
+            colors.BOLD
+        )
 
 def response_handler(response_text, response_status,
-                     module, ioc, server_id=None):
+                     module, ioc, ioc_type, server_id=None):
     if response_status == 200:
         try:
             json_response = json.loads(response_text)
@@ -101,13 +134,19 @@ def response_handler(response_text, response_status,
             mod.display(module,
                         ioc,
                         message_type="ERROR",
-                        string="VxStream json_response was not readable.")
+                        string="hybridanalysis json_response was not readable.")
             return None
 
         if "count" in json_response and "search_terms" in json_response:
             if json_response["count"] > 0:
                 verdict = json_response["result"][0]["verdict"]
                 threat_score = json_response["result"][0]["threat_score"]
+                if ioc_type in ["domain", "IPv4", "IPv6", "URL"] and (threat_score == None or "no specific threat" in verdict):
+                    mod.display(module,
+                        ioc,
+                        "NOT_FOUND",
+                        "No specific threat found in hybridanalysis")
+                    return None
                 type = json_response["search_terms"][0]["id"]
                 url = "https://www.hybrid-analysis.com/advanced-search-results?terms[%s]=%s" % (type, ioc)
                 mod.display(module,
@@ -118,20 +157,34 @@ def response_handler(response_text, response_status,
         elif json_response:
             verdict = json_response[0]["verdict"]
             threat_score = json_response[0]["threat_score"]
+            if ioc_type in ["domain", "IPv4", "IPv6", "URL"] and (threat_score == None or "no specific threat" in verdict):
+                mod.display(module,
+                    ioc,
+                    "NOT_FOUND",
+                    "No specific threat found in hybridanalysis")
+                return None
             url = "https://www.hybrid-analysis.com/sample/"+ioc
+            display_array = []
+            display_array.append(get_color_verdict(verdict.capitalize()))
+            if threat_score == None:
+                threat_score_message = ""
+            else: 
+                threat_score_message = "{}/100".format(get_color_positives(threat_score))
+                display_array.append(threat_score_message)
+            display_array.append("Details: {}".format(url))
             mod.display(module,
                         ioc,
                         "FOUND",
-                        "%s | %s/100 | %s" % (verdict, threat_score, url))
+                        " | ".join(display_array))
             return None
         mod.display(module,
                     ioc,
                     "NOT_FOUND",
-                    "Nothing found in vxstream DB")
+                    "Nothing found in hybridanalysis DB")
         return None
     else:
         mod.display(module,
                     ioc,
                     "ERROR",
-                    "VXstream API connection status %d" % response_status)
+                    "hybridanalysis API connection status %d" % response_status)
         return None

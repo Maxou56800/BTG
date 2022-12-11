@@ -1,31 +1,35 @@
 name;types;method
-misp;MD5, SHA1, domain, IPv4, IPv6, URL, SHA256, SHA512;Onpremises
-cuckoosandbox;MD5, SHA256;Onpremises
-cybercrimetracker;domain, IPv4, URL;Cache
-dshield;domain;Cache
-feodotracker;IPv4, domain;Cache
-googlesb;URL, domain;Online
-irish;MD5, SHA256, SHA1;Online
-lehigh;domain;Cache
-malekal;MD5, SHA1, domain, IPv4, IPv6, URL, SHA256, SHA512;Online
-malshare;MD5, SHA256, SHA1;Cache
-malwareconfig;MD5, SHA256, IPv4, IPv6, domain;Online
-malwaredomainlist;domain;Cache
-malwaredomains;domain;Cache
-malwareteks;domain;Cache
-metadefender;MD5, SHA1, SHA256, SHA512;Online
-misp_crawler;MD5, SHA5, domain, IPv4,IPv6, URL, SHA256, SHA512;Online
-nothink;IPv4;Cache
-openphish;domain, URL, IPv4;Cache
-otx;MD5, SHA1, domain, IPv4, IPv6, URL, SHA256;Online
-ransomwaretracker;domain, URL, IPv4, IPv6;Cache
-spamhaus;IPv4, IPv6;Cache
+misp;MD5,SHA1,domain,IPv4,IPv6,URL,SHA256,SHA512;Onpremises
+cuckoosandbox;MD5,SHA256;Onpremises
+cybercrimetracker;domain,IPv4,URL;Cache
+feodotracker;IPv4,domain;Cache
+googlesb;URL,domain;Online
+irish;MD5,SHA256,SHA1;Online
+malshare;MD5,SHA256,SHA1;Cache
+malwareconfig;MD5;Online
+metadefender;MD5,SHA1,SHA256,SHA512,domain,URL,IPv4,IPv6;Online
+misp_crawler;MD5,SHA5,domain,IPv4,IPv6,URL,SHA256,SHA512;Online
+openphish;domain,URL,IPv4;Cache
+otx;MD5,SHA1,domain,IPv4,IPv6,URL,SHA256;Online
+spamhaus;IPv4,IPv6;Cache
 sslblacklist;SHA1;Cache
-torips;IPv4;Cache
-urlhaus;URL, domain;Cache
-viper;MD5, SHA1, SHA256, URL, domain, IPv4;Onpremises
-virusshare;MD5, SHA1, SHA256;Online
-virustotal;MD5, SHA1, SHA256, URL, IPv4, domain;Online
-vxstream;MD5, SHA1, SHA256, domain, IPv4, IPv6, URL;Online
-vxvault;IPv4, domain, URL;Cache
-zeustracker;domain, IPv4, URL;Cache
+torips;IPv4,IPv6;Cache
+urlhaus;URL,domain,IPv4;Cache
+viper;MD5,SHA1,SHA256,URL,domain,IPv4;Onpremises
+virusshare;MD5,SHA1,SHA256;Online
+virustotal;MD5,SHA1,SHA256,URL,IPv4,domain;Online
+hybridanalysis;MD5,SHA1,SHA256,domain,IPv4,IPv6,URL;Online
+vxvault;IPv4,domain,URL;Cache
+threatfox;IPv4,domain,URL,MD5,SHA256;Cache
+vtsysinternals;SHA256,SHA1;Online
+signature_base_neo23x0;IPv4,domain,MD5,SHA1,SHA256;Cache
+vxvaultquery;MD5,IPv4;Online
+mwdb;MD5,SHA1,SHA256,SHA512,URL,domain,IPv4,IPv6;Onpremises
+abuseipdb;IPv4,IPv6;Online
+urlscan;URL;Online
+fortiguardwebfilter;URL,domain,IPv4;Online
+dshield;IPv4,IPv6;Online
+blocklistde;IPv4;Cache
+pulsedive;IPv4,IPv6,domain,URL;Online
+malwarebazaar;MD5,SHA1,SHA256;Online
+phishtank;domain,URL,IPv4;Cache

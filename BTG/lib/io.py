@@ -31,7 +31,6 @@ from BTG.lib.config_parser import Config
 from BTG.lib.redis_config import init_redis
 from BTG.lib.utils import cluster, pidfile
 
-
 class module:
     """
         This class display prettily informations
@@ -41,83 +40,90 @@ class module:
 
     @classmethod
     def display(self, module="INIT", ioc="", message_type="DEBUG", string=""):
-        exec("colorize = colors.%s" % message_type, None, globals())
         config = Config.get_instance()
-
         pidfile_dir = "/tmp/BTG/data"
         pidfile_path = pidfile.exists_pidfile(pidfile_dir)
-        # TODO: this cond should always be True otherwise it means,
+        # This cond should always be True otherwise it means,
         # main process died and did not notify us
         if pidfile_path == pidfile_dir:
             sys.exit()
         else:
             lockname, dictname = cluster.get_keys(pidfile_path)
 
-        if not config["debug"] and \
-           (message_type == "INFO" or message_type == "DEBUG"):
-            pass
+        if ioc != "":
+            if len(ioc) >= 67:
+                ioc = '%s%s...' % (ioc[:64], colors.NORMAL)
+            ioc_show = "{%s%s%s} " % (colors.INFO, ioc, colors.NORMAL)
         else:
-            if ioc != "":
-                if len(ioc) >= 67:
-                    ioc = '%s%s...' % (ioc[:64], colors.NORMAL)
-                ioc_show = "{%s%s%s} " % (colors.INFO, ioc, colors.NORMAL)
-            else:
-                ioc_show = " "
-            output = "[%s%s%s][%s%s%s]%s%s%s%s" % (colors.MODULE,
-                                                   module,
-                                                   colors.NORMAL,
-                                                   colorize,
-                                                   message_type,
-                                                   colors.NORMAL,
-                                                   ioc_show,
-                                                   colors.BOLD,
-                                                   string,
-                                                   colors.NORMAL)
+            ioc_show = " "
+        output = "[%s%s%s][%s%s%s]%s%s%s%s" % (colors.MODULE,
+                                               module,
+                                               colors.NORMAL,
+                                               getattr(colors, message_type),
+                                               message_type,
+                                               colors.NORMAL,
+                                               ioc_show,
+                                               colors.BOLD,
+                                               string,
+                                               colors.NORMAL)
 
-            log_folder = config["log_folder"]
-            if message_type in ["FOUND", "NOT_FOUND", "ERROR", "WARNING"]:
-                if message_type == "FOUND":
-                    log_path = log_folder + config["log_found_file"]
-                    if not exists(log_path):
-                        open(log_path, 'a+').close()
-                        chmod(log_path, 0o666)
-                    f = open(log_path, 'a')
-                    f.write("%s%s\n" % (datetime.now().strftime('[%d-%m-%Y %H:%M:%S]'),
-                            output))
-                    f.close()
-                elif message_type == "ERROR" or message_type == "WARNING":
-                    log_path = log_folder + config["log_error_file"]
-                    if not exists(log_path):
-                        open(log_path, 'a+').close()
-                        chmod(log_path, 0o666)
-                    f = open(log_path, 'a')
-                    f.write("%s%s\n" % (datetime.now().strftime('[%d-%m-%Y %H:%M:%S]'),
-                            output))
-                    f.close()
-
-                redis_host, redis_port, redis_password = init_redis()
-
-                conn = redis.StrictRedis(host=redis_host, port=redis_port,
-                                         password=redis_password)
-
-                message = {'type': message_type,
-                           'string': output
-                           }
-                c = cluster.edit_cluster(ioc, module, message,
-                                         conn, lockname, dictname)
-                cluster.print_cluster(c, conn)
-                return None
-
-            elif message_type == "FATAL_ERROR":
+        log_folder = config["log_folder"]
+        if message_type in ["FOUND", "NOT_FOUND", "ERROR", "WARNING", "INFO", "DEBUG"]:
+            # Logs founds in specific file
+            if message_type == "FOUND":
+                log_path = log_folder + config["log_found_file"]
+                if not exists(log_path):
+                    open(log_path, 'a+').close()
+                    chmod(log_path, 0o666)
+                f = open(log_path, 'a')
+                output_line = "%s%s\n" % (datetime.now().strftime('[%d-%m-%Y %H:%M:%S]'), output)
+                f.write(output_line)
+                f.close()
+            # Logs errors and warning in specific file
+            elif message_type == "ERROR" or message_type == "WARNING":
                 log_path = log_folder + config["log_error_file"]
                 if not exists(log_path):
                     open(log_path, 'a+').close()
                     chmod(log_path, 0o666)
                 f = open(log_path, 'a')
-                f.write("%s%s\n" % (datetime.now().strftime('[%d-%m-%Y %H:%M:%S]'), output))
+                f.write("%s%s\n" % (datetime.now().strftime('[%d-%m-%Y %H:%M:%S]'),
+                        output))
                 f.close()
-                print(output)
+            
+            # Start redis communication
+            redis_host, redis_port, redis_password = init_redis()
+            conn = redis.StrictRedis(host=redis_host, port=redis_port,
+                                     password=redis_password)
+            message = {
+                'type': message_type,
+                'string': output
+            }
+            c = cluster.edit_cluster(ioc, module, message,
+                                     conn, lockname, dictname)
+            cluster.print_cluster(c, conn)
+            if message_type == "NOT_FOUND" and not config["display_not_found"]:
                 return None
+            elif message_type == "WARNING" and not config["display_warnings"]:
+                return None
+            elif message_type == "ERROR" and not config["display_errors"]:
+                return None
+            elif message_type == "INFO" and not config["display_info"]:
+                return None
+            elif message_type == "DEBUG" and not config["debug"]:
+                return None
+            print(output)
+            return None
+
+        elif message_type == "FATAL_ERROR":
+            log_path = log_folder + config["log_error_file"]
+            if not exists(log_path):
+                open(log_path, 'a+').close()
+                chmod(log_path, 0o666)
+            f = open(log_path, 'a')
+            f.write("%s%s\n" % (datetime.now().strftime('[%d-%m-%Y %H:%M:%S]'), output))
+            f.close()
+            print(output)
+            return None
 
     @classmethod
     def allowedToSearch(self, status):
@@ -128,9 +134,9 @@ class module:
         if status == "Onpremises":
             '''
             here the module claims to be related to an on premises service
-            , i.e. being inside researcher nertwork, so we allow the lookup
+            , i.e. being inside researcher network, so we allow the lookup
 
-            modules: misp, cuckoo
+            modules: misp, cuckoo, mwdb
             '''
             return True
         elif status == "Online" and not config["offline"]:
@@ -244,14 +250,20 @@ class colors:
         MODULE = ''
         NB_ERROR = ''
     else:
-        DEBUG = '\033[38;5;13m'  # LIGHT_MAGENTA
-        INFO = '\033[38;5;117m'  # LIGHT_BLUE
-        FOUND = '\033[38;5;10m'  # GREEN
-        NOT_FOUND = FOUND
-        WARNING = '\033[38;5;11m'  # YELLOW
-        ERROR = '\033[38;5;202m'  # ORANGE
-        FATAL_ERROR = '\033[38;5;9m'  # RED
-        NORMAL = '\033[0m'
-        BOLD = '\033[1m'
-        MODULE = '\033[38;5;199m'  # PURPLE
-        NB_ERROR = '\033[38;5;9m'  # RED
+        DEBUG = '\033[38;5;13m'        # LIGHT_MAGENTA
+        INFO = '\033[38;5;117m'        # LIGHT_BLUE
+        FOUND = '\033[38;5;10m'        # GREEN
+        GOOD = '\033[38;5;10m'         # GREEN
+        NOT_FOUND = '\033[38;5;11m'    # YELLOW
+        WARNING = '\033[38;5;11m'      # YELLOW
+        LOW_RISK = '\033[38;5;11m'     # YELLOW
+        ERROR = '\033[38;5;202m'       # ORANGE
+        MEDIUM_RISK = '\033[38;5;202m' # ORANGE
+        SUSPICIOUS = '\033[38;5;202m' # ORANGE
+        FATAL_ERROR = '\033[38;5;9m'   # RED
+        INFECTED = '\033[38;5;9m'      # RED
+        HIGH_RISK = '\033[38;5;9m'     # RED
+        NORMAL = '\033[0m'             # NOCOLOR
+        BOLD = '\033[1m'               # BOLD
+        MODULE = '\033[38;5;199m'      # PURPLE
+        NB_ERROR = '\033[38;5;9m'      # RED

@@ -18,9 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 
+import csv
+
 from BTG.lib.cache import Cache
 from BTG.lib.io import module as mod
-
+from BTG.lib.io import colors
 
 class feodotracker():
     """
@@ -29,7 +31,7 @@ class feodotracker():
     def __init__(self, ioc, type, config, queues):
         self.config = config
         self.module_name = __name__.split(".")[-1]
-        self.types = ["IPv4", "domain"]
+        self.types = ["IPv4"]
         self.search_method = "Online"
         self.description = "Search IOC in FeodoTracker database"
         self.author = "Conix"
@@ -39,23 +41,33 @@ class feodotracker():
 
         self.search()
 
+    def get_color(self, status):
+        if status == "online":
+            return "{}{}{}{}".format(
+                colors.GOOD,
+                status,
+                colors.NORMAL,
+                colors.BOLD
+            )
+        elif status == "offline":
+            return "{}{}{}{}".format(
+                    colors.INFECTED,
+                    status,
+                    colors.NORMAL,
+                    colors.BOLD
+                )
+        else:
+            return status
+
     def search(self):
         mod.display(self.module_name, "", "INFO", "Search in FeodoTracker ...")
-        url = "https://feodotracker.abuse.ch/blocklist/?download="
+        url = "https://feodotracker.abuse.ch/downloads/"
         paths = [
-            "ipblocklist",
-            "domainblocklist"
+            "ipblocklist.csv",
         ]
 
-        if self.type == "IPv4":
-            path = paths[0]
-        elif self.type == "domain":
-            path = paths[1]
-        else:
-            mod.display(self.module_name,
-                        self.ioc,
-                        "ERROR",
-                        "This IOC is of an unrecognized type: %s" % (self.type))
+        path = paths[0]
+
         try:
             content = Cache(self.module_name, url, path, self.search_method).content
         except NameError as e:
@@ -71,9 +83,22 @@ class feodotracker():
                         "Nothing found in FeodoTracker")
             return None
         else:
-            url_reponse = "https://feodotracker.abuse.ch/host/"+self.ioc
-            mod.display(self.module_name,
-                        self.ioc,
-                        "FOUND",
-                        url_reponse)
+            try:
+                reader = csv.reader(content.replace('"', "").split('\n'), delimiter=',')
+            except:
+                mod.display(self.module_name,
+                            self.ioc,
+                            "ERROR",
+                            "Could not parse CSV feed")
+            for row in reader:
+                if row[0][0] == "#":
+                    continue
+                if row[1] == self.ioc:
+                    mod.display(self.module_name,
+                                self.ioc,
+                                "FOUND",
+                                "{} C2 - {}:{} - {} ".format(
+                                    row[5], row[1], row[2], self.get_color(row[3])
+                                )
+                    )
             return None

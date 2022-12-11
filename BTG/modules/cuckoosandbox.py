@@ -53,7 +53,12 @@ class Cuckoosandbox:
         self.verbose = "GET"
         self.headers = self.config["user_agent"]
         self.proxy = self.config["proxy_host"]
-
+        if self.config["offline"] and self.config["cuckoosandbox_is_online_instance"]:
+            mod.display(self.module_name,
+                        self.ioc,
+                        "DEBUG",
+                        "CuckooSandbox search is disabled, because online instance is True and Offline mode is True in config file")
+            return None
         length = len(self.config['cuckoosandbox_api_url'])
         if length != len(self.config['cuckoosandbox_web_url']) \
            and length <= 0:
@@ -84,6 +89,7 @@ class Cuckoosandbox:
                        'headers': self.headers,
                        'module': self.module_name,
                        'ioc': self.ioc,
+                       'ioc_type': self.type,
                        'verbose': self.verbose,
                        'proxy':  self.proxy,
                        'server_id': indice
@@ -97,7 +103,7 @@ class Cuckoosandbox:
                         "Check if you have filled cuckoosandbox fields in btg.cfg")
 
 
-def response_handler(response_text, response_status, module, ioc, server_id):
+def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
         web_url = cfg['cuckoosandbox_api_url'][server_id]
         if response_status == 200:
             try:

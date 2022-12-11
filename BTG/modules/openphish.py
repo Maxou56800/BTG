@@ -40,7 +40,7 @@ class Openphish:
         self.search()
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Searching...")
+        mod.display(self.module_name, "", "INFO", "Searching for OpenPhish...")
         url = "https://openphish.com/"
         paths = [
             "feed.txt"

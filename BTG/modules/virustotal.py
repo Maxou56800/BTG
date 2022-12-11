@@ -25,7 +25,7 @@ import random
 
 from BTG.lib.async_http import store_request
 from BTG.lib.io import module as mod
-
+from BTG.lib.io import colors
 
 class Virustotal:
     """
@@ -84,6 +84,7 @@ class Virustotal:
                    "data": parameters,
                    "module": self.module_name,
                    "ioc": self.ioc,
+                   "ioc_type": self.type,
                    "verbose": self.verbose,
                    "proxy": self.proxy
                    }
@@ -100,6 +101,7 @@ class Virustotal:
                    "data": parameters,
                    "module": self.module_name,
                    "ioc": self.ioc,
+                   "ioc_type": self.type,
                    "verbose": self.verbose,
                    "proxy": self.proxy
                    }
@@ -107,8 +109,24 @@ class Virustotal:
         return json_request
 
 
+def get_color(positives):
+    if positives == 0:
+        return "{}{}{}{}".format(
+            colors.GOOD,
+            positives,
+            colors.NORMAL,
+            colors.BOLD
+        )
+    return "{}{}{}{}".format(
+            colors.INFECTED,
+            positives,
+            colors.NORMAL,
+            colors.BOLD
+        )
+
+
 def response_handler(response_text, response_status,
-                     module, ioc, server_id=None):
+                     module, ioc, ioc_type, server_id=None):
     if response_status == 200:
         try:
             json_content = json.loads(response_text)
@@ -123,7 +141,7 @@ def response_handler(response_text, response_status,
             mod.display(module,
                         ioc,
                         "FOUND",
-                        "Score: %d/%d | %s" % (json_content["positives"],
+                        "Score: {}/{} | {}".format(get_color(json_content["positives"]),
                                                json_content["total"],
                                                json_content["permalink"]))
         else:

@@ -92,6 +92,7 @@ class googlesb():
                    'data': self.data,
                    'module': self.module_name,
                    'ioc': self.ioc,
+                   'ioc_type': self.type,
                    'verbose': self.verbose,
                    'proxy': self.proxy
                    }
@@ -100,7 +101,7 @@ class googlesb():
 
 
 def response_handler(response_text, response_status, module,
-                     ioc, server_id=None):
+                     ioc, ioc_type, server_id=None):
     if response_status == 200:
         try:
             json_response = json.loads(response_text)

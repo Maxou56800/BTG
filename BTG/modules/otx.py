@@ -75,13 +75,15 @@ class Otx:
         try:
             if self.ioc == str(result["general"]["indicator"]):
                 _id = str(result["general"]["pulse_info"]["pulses"][0]["id"])
-                tags = ""
+                tags = []
                 for tag in result["general"]["pulse_info"]["pulses"][0]["tags"]:
-                    tags = tags + "%s " % tag
+                    if tag in tags:
+                        continue
+                    tags.append(tag)
                 mod.display(self.module_name,
                             self.ioc,
                             "FOUND",
-                            "Tags: %s| https://otx.alienvault.com/pulse/%s/" % (tags, _id))
+                            "Tags: %s | Details: https://otx.alienvault.com/pulse/%s/" % (", ".join(tags), _id))
         except:
             mod.display(self.module_name,
                         self.ioc,

@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "btg"
+version = "0.2.0"
+description = "This tool allows you to qualify one or more potential malicious observables of various type (URL, MD5, SHA1, SHA256, SHA512, IPv4, IPv6, domain etc..)."
+authors = [
+    "Maxou56800 <contact@maxou56800.fr>",
+    "Tanguy Becam",
+    "Alexandra Toussaint",
+    "Hicham Megherbi",
+    "Robin Marsollier"
+]
+license = "GPLv3"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+validators = "^0.20.0"
+pymisp = ">=2.4.0"
+dnspython = ">=2.2.1"
+requests-cache = ">=0.9.7"
+netaddr = ">=0.8.0"
+rq = ">=1.11.1"
+redis = ">=4.4.0"
+tldextract = ">=3.4.0"
+otxv2 = ">=1.5.12"
+aiohttp = ">=3.8.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

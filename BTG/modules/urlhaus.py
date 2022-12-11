@@ -26,14 +26,14 @@ from BTG.lib.cache import Cache
 
 class urlhaus():
     """
-        This module performs a Safe Browsing Lookup to Google API
+        URLhaus IOC module
     """
     def __init__(self, ioc, type, config, queues):
         self.config = config
         self.module_name = __name__.split(".")[-1]
-        self.types = ["URL", "domain"]
+        self.types = ["URL", "domain", "IPv4"]
         self.search_method = "Online"
-        self.description = "Search IOC in urlhause database"
+        self.description = "Search IOC in URLhaus database"
         self.author = "Conix"
         self.creation_date = "31-05-2018"
         self.type = type
@@ -42,13 +42,13 @@ class urlhaus():
         self.search()
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Search in URLhause ...")
+        mod.display(self.module_name, "", "INFO", "Search in URLhaus ...")
         url = "https://urlhaus.abuse.ch/downloads/"
         paths = [
-            "csv"
+            "/downloads/csv/"
         ]
         try:
-            content = Cache(self.module_name, url, paths[0], self.search_method).content
+            content = Cache(self.module_name, url, paths[0], self.search_method, is_zip_compressed=True).content
         except NameError as e:
             mod.display(self.module_name,
                         self.ioc,
@@ -59,7 +59,7 @@ class urlhaus():
             mod.display(self.module_name,
                         self.ioc,
                         "NOT_FOUND",
-                        "Nothing found in URLhause")
+                        "Nothing found in URLhaus")
             return None
         else:
             try:
@@ -71,9 +71,11 @@ class urlhaus():
                             "Could not parse CSV feed")
                 return None
             for row in reader:
-                if self.ioc in row:
+                if row[0][0] == "#":
+                    continue
+                if self.ioc in row[2]:
                     mod.display(self.module_name,
                                 self.ioc,
                                 "FOUND",
-                                row[-1])
+                                "{} - C2 status: {} - Tags: {}".format(row[7], row[3], row[6]))
                     return None

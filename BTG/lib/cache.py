@@ -20,75 +20,118 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 
-from os import chmod, mkdir, makedirs, remove, stat
-from os.path import exists, isdir
+from os import chmod, mkdir, makedirs, remove, stat, listdir
+from os.path import exists, isdir, join, basename
 from requests.exceptions import ConnectionError, ReadTimeout
 from time import mktime
 import datetime
 import requests
 import sys
+import zipfile
 
 from BTG.lib.config_parser import Config
 from BTG.lib.io import module as mod
 
 
 class Cache:
-    def __init__(self, module_name, url, filename, search_method):
+    def __init__(self, module_name, url, filename, search_method, is_zip_compressed=False, headers=None):
         self.config = Config.get_instance()
         self.module_name = module_name
         self.url = url
         self.filename = self.new_filename = filename
         self.temp_folder = "%s%s/" % (self.config["temporary_cache_path"], self.module_name)
+        self.is_zip_compressed=False
+        if not headers:
+            self.headers = self.config["user_agent"]
+        else:
+            self.headers = headers
         position = 0
         filename_copy = self.filename
         if not self.filename.isalnum():
-            filename_copy = self.filename.replace("_", "")
+            filename_copy = self.filename.replace("_", "").replace("-", "")
             for pos, char in enumerate(filename_copy):
                 if not char.isalnum() and char != '.':
                     position = pos
         self.new_filename = filename_copy[position:]
+
+        if not len(basename(self.new_filename)):
+            self.new_filename = "{}_downloaded.raw".format(self.module_name)
         self.temp_file = "%s%s" % (self.temp_folder, self.new_filename)
+        self.extracted_folder = None
+        if is_zip_compressed:
+            self.extracted_folder = join(self.temp_folder, "{}_extracted/".format(self.temp_file)) 
 
         self.createModuleFolder()
         if self.checkIfNotUpdate():
-            if mod.allowedToSearch(search_method):
+            if mod.allowedToSearch(search_method) and (not self.config["offline"] or self.config["offline_allow_cache_module_download"]):
                 self.downloadFile()
+                if self.is_zip_compressed:
+                    self.decompress_zip(join(self.temp_folder, self.new_filename))
             else:
-                raise NameError("Offline parameter is set on, cannot refresh outdated cache")
-                return None
+                mod.display("{}.cache".format(self.module_name),
+                    message_type="INFO",
+                    string="Offline parameter is set on, cannot refresh outdated cache")
+
         self.content = self.getContent()
 
+
     def getContent(self):
-        f = ""
-        if exists(self.temp_file):
-            try:
-                f = open(self.temp_file, encoding="ISO-8859-1").read()
-            except:
-                f = open(self.temp_file).read()
-        return f
+        files_to_read = []
+        if self.extracted_folder:
+            # Add extracted files to the list
+            if not exists(self.extracted_folder):
+                zipfile_path = join(self.temp_folder, self.new_filename)
+                if exists(zipfile_path):
+                    self.decompress_zip(zipfile_path)
+            for filename in listdir(self.extracted_folder):
+                files_to_read.append(join(self.extracted_folder, filename))
+        else:
+            # If not archive append only the downloaded file
+            files_to_read.append(self.temp_file)
+
+        file_content = ""
+        for file_to_read in files_to_read:
+            if exists(file_to_read):
+                try:
+                    file_content = file_content + open(file_to_read, encoding="ISO-8859-1").read()
+                except:
+                    file_content = file_content + open(file_to_read).read()
+        return file_content.strip()
+
+    def decompress_zip(self, zip_file):
+        if not exists(zip_file):
+            return None
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+            zip_ref.extractall(self.extracted_folder)
 
     def downloadFile(self):
         """
             Get file from web
         """
-        mod.display("%s.cache" % self.module_name,
+        if self.config["offline"] and not self.config["offline_allow_cache_module_download"]:
+            mod.display("{}.cache".format(self.module_name),
+                    message_type="ERROR",
+                    string="[Kill switch] Racket hole! {}{}".format(self.url, self.filename))
+            return
+        mod.display("{}.cache".format(self.module_name),
                     message_type="DEBUG",
-                    string="Update %s%s" % (self.url, self.filename))
-        full_url = "%s%s" % (self.url, self.filename)
+                    string="Update {}{}".format(self.url, self.filename))
+        full_url = "{}{}".format(self.url, self.filename)
         try:
             r = requests.get(
                 full_url,
-                stream=True, headers=self.config["user_agent"],
+                stream=True, 
+                headers=self.headers,
                 proxies=self.config["proxy_host"],
                 timeout=self.config["requests_timeout"]
             )
         except ConnectionError as e:
-            mod.display("%s.cache" % self.module_name,
+            mod.display("{}.cache".format(self.module_name),
                         message_type="ERROR",
                         string=e)
             return
         except ReadTimeout as e:
-            mod.display("%s.cache" % self.module_name,
+            mod.display("{}.cache".format(self.module_name),
                         message_type="ERROR",
                         string="Timeout: %s" % (full_url))
             return
@@ -96,8 +139,8 @@ class Cache:
             raise
         if r.status_code == 200:
             if not exists("%s.lock" % self.temp_file):
-                open("%s.lock" % self.temp_file, 'a').close()
-                chmod("%s.lock" % self.temp_file, 0o666)
+                open("{}.lock".format(self.temp_file), 'a').close()
+                chmod("{}.lock".format(self.temp_file), 0o666)
                 if exists(self.temp_file):
                     to_chmod = False
                 else:
@@ -108,18 +151,25 @@ class Cache:
                 if to_chmod:
                     chmod(self.temp_file, 0o666)
                 try:
-                    remove("%s.lock" % self.temp_file)
+                    remove("{}.lock".format(self.temp_file))
                 except:
                     raise
         elif self.module_name == "malshare" and r.status_code == 404:
             # When we have a 404 from malshare it is a valid negative response
-            raise NameError('Hash not found on malshare, it is alright')
+            mod.display("{}.cache".format(self.module_name),
+                        message_type="DEBUG",
+                        string="Hash not found on malshare, it is alright. Response code: {} | {}".format(r.status_code, full_url))
+            return
+        elif r.status_code == 503:
+            mod.display("{}.cache".format(self.module_name),
+                         message_type="ERROR",
+                         string="Service Unavailable (%d) | %s" % (r.status_code, full_url))
+            return
         else:
-            raise ValueError(r.status_code)
-            # mod.display("%s.cache" % self.module_name,
-            #             "ERROR",
-            #             "Response code: %s | %s" % (r.status_code, full_url))
-
+            mod.display("{}.cache".format(self.module_name),
+                        message_type="ERROR",
+                        string="Response code: {} | {}".format(r.status_code, full_url))
+            return
     def checkIfNotUpdate(self):
         """
             True: Need to be updated
@@ -149,9 +199,9 @@ class Cache:
             try:
                 makedirs(self.config["temporary_cache_path"])
             except:
-                mod.display("%s.cache" % self.module_name,
+                mod.display("{}.cache".format(self.module_name),
                             "FATAL_ERROR",
-                            "Unable to create %s directory. (Permission denied)" % self.config["temporary_cache_path"])
+                            "Unable to create {} directory. (Permission denied)".format(self.config["temporary_cache_path"]))
                 sys.exit()
             chmod(self.config["temporary_cache_path"], 0o770)
         if not isdir(self.temp_folder):

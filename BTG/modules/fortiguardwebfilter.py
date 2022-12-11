@@ -16,7 +16,8 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 import json
-import xml.etree.ElementTree as ET
+import urllib.parse
+import re
 
 from BTG.lib.async_http import store_request
 from BTG.lib.config_parser import Config
@@ -26,13 +27,13 @@ from BTG.lib.io import colors
 cfg = Config.get_instance()
 
 
-class DShield:
+class FortiguardWebFilter:
     def __init__(self, ioc, type, config, queues):
         self.config = config
         self.module_name = __name__.split(".")[-1]
-        self.types = ["IPv4", "IPv6"]
+        self.types = ["URL", "domain", "IPv4"]
         self.search_method = "Online"
-        self.description = "Search IOC in DShield database"
+        self.description = "Search IOC in FortiGuardWebFilter database"
         self.type = type
         self.ioc = ioc
         self.queues = queues
@@ -40,14 +41,13 @@ class DShield:
         self.proxy = self.config['proxy_host']
         self.verify = True
         self.headers = self.config["user_agent"]
-        if self.type not in self.types:
-            return None
+        self.fortios_version = "9"
+
         self.Search()
 
     def Search(self):
-        mod.display(self.module_name, "", "INFO", "Search in DShield...")
-        
-        url = "https://www.dshield.org/api/ip/{}".format(self.ioc)
+        mod.display(self.module_name, self.ioc, "INFO", "Search in FortiguardWebFilter...")
+        url = 'https://www.fortiguard.com/webfilter?&version={}&q={}'.format(self.fortios_version, urllib.parse.quote(self.ioc))
         request = {
             'url': url,
             'headers': self.headers,
@@ -61,53 +61,41 @@ class DShield:
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
-def get_color(positives):
-    if positives == 0:
-        return "{}{}{}{}".format(
-            colors.GOOD,
-            positives,
-            colors.NORMAL,
-            colors.BOLD
-        )
-    return "{}{}{}{}".format(
-            colors.INFECTED,
-            positives,
-            colors.NORMAL,
-            colors.BOLD
-        )
-
 def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     if response_status == 200:
-        root = ET.fromstring(response_text)
-        total_reports = 0
-        honeypot_attacks = 0
-        for element in root:
-            if element.tag == "count":
-                if element.text:
-                    total_reports = int(element.text)
-            elif element.tag == "attacks":
-                if element.text:
-                    honeypot_attacks = int(element.text)
-
-        if total_reports == 0 and honeypot_attacks == 0:
+        ioc_category = re.findall('<meta name="description" property="description" content="Category: (.*)"', response_text)
+        if not len(ioc_category): 
             mod.display(module,
                     ioc,
                     "NOT_FOUND",
-                    "No reports and no honeypot attacks from this IP address"
+                    "Not category for this IOC"
             )
             return None
+        # Categories extract from: https://www.fortiguard.com/webfilter/categories
+        risk_categories = [
+            "Dynamic DNS",
+            "Malicious Websites",
+            #"Newly Observed Domain", # Too many false positive
+            "Newly Registred Domain",
+            "Phishing",
+            "Spam URLs",
+            "Proxy Avoidance", # Tor related (Not in risk category)
+        ]
+        if ioc_category[0] not in risk_categories:
+            mod.display(module,
+                    ioc,
+                    "NOT_FOUND",
+                    "This IOC is not in a security risk category: {}".format(ioc_category[0])
+            )
+            return None
+        
         mod.display(module,
                     ioc,
-                    message_type="FOUND",
-                    string=" | ".join([
-                        "Total reports: {}".format(get_color(total_reports)),
-                        "Total honeypot attacks: {}".format(get_color(honeypot_attacks)),
-                    ])
+                    "FOUND",
+                    "Category: {}".format(ioc_category[0])
         )
-
-        return None
     else:
         mod.display(module,
                     ioc,
                     message_type="ERROR",
-                    string="DShield connection status : %d" % (response_status))
+                    string="urlscan connection status : %d" % (response_status))
