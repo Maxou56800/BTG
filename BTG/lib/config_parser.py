@@ -22,12 +22,8 @@ import ast
 import os
 import sys
 
-try:
-    from ConfigParser import ConfigParser
-except:
-    from configparser import ConfigParser
+from configparser import ConfigParser
 from multiprocessing import Manager
-
 
 class Config():
 
