@@ -130,11 +130,11 @@ async def fetch_post(url, session, headers, proxy, data, module, ioc, ioc_type, 
                                 proxy=proxy, timeout=timeout,
                                 auth=auth, ssl=verify) as response:
             return await response.text(), response.status, module, ioc, ioc_type, server_id
-    except:
+    except Exception as e:
         mod.display(module,
                     ioc,
                     message_type="ERROR",
-                    string="Failed to connect to %s" % (url))
+                    string="Failed to connect to %s ({})".format(url, e))
 
 
 def filler(request):

@@ -43,7 +43,10 @@ class Misp:
         self.ioc = ioc
         self.queues = queues
         self.verbose = "POST"
-        self.headers = {'Content-Type': 'application/json','Accept': 'application/json'}
+        self.headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
         self.proxy = self.config['proxy_host']
         self.verify = self.config['misp_verifycert']
         if self.config["offline"] and self.config["misp_is_online_instance"]:
@@ -59,6 +62,8 @@ class Misp:
                         "ERROR",
                         "MISP fields in btg.cfg are missfilled, checkout commentaries.")
             return None
+        # Add tail slashe to MISP URLs
+        self.config['misp_url'] = [u if u.endswith('/') else u + '/' for u in self.config['misp_url']]
         for indice in range(len(self.config['misp_url'])):
             misp_url = self.config['misp_url'][indice]
             misp_key = self.config['misp_key'][indice]
@@ -67,28 +72,35 @@ class Misp:
     def Search(self, misp_url, misp_key, indice):
         mod.display(self.module_name, "", "INFO", "Search in misp...")
 
-        url = '%sattributes/restSearch/json' % (misp_url)
+        url = '{}attributes/restSearch'.format(misp_url)
         self.headers['Authorization'] = misp_key
-        payload = {'value': self.ioc, 'searchall': 1}
+
+        payload = {
+            'value': self.ioc, 
+            'searchall': 1
+        }
         data = json.dumps(payload)
 
-        request = {'url': url,
-                   'headers': self.headers,
-                   'data': data,
-                   'module': self.module_name,
-                   'ioc': self.ioc,
-                   'ioc_type': self.type,
-                   'verbose': self.verbose,
-                   'proxy': self.proxy,
-                   'verify': self.verify,
-                   'server_id': indice
-                   }
+        request = {
+            'url': url,
+            'headers': self.headers,
+            'data': data,
+            'module': self.module_name,
+            'ioc': self.ioc,
+            'ioc_type': self.type,
+            'verbose': self.verbose,
+            'proxy': self.proxy,
+            'verify': self.verify,
+            'server_id': indice
+        }
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
 
 def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     web_url = cfg['misp_url'][server_id]
+    if not web_url.endswith("/"):
+        web_url = "{}/".format(web_url)
     if response_status == 200:
         try:
             json_response = json.loads(response_text)
@@ -96,7 +108,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
             mod.display(module,
                         ioc,
                         message_type="ERROR",
-                        string="Misp json_response was not readable.")
+                        string="MISP json_response was not readable.")
             return None
 
         if "Attribute" in json_response["response"]:
@@ -104,20 +116,28 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
             for attr in json_response["response"]["Attribute"]:
                 event_id = attr["event_id"]
                 if event_id not in displayed:
-                    displayed.append(event_id)
+                    event_title = ""
+                    if "Event" in attr and "info" in attr["Event"]:
+                        event_title = "Event title: {} | ".format(attr["Event"]["info"])
                     mod.display(module,
                                 ioc,
                                 "FOUND",
-                                "Event: %sevents/view/%s" % (web_url,
-                                                             event_id))
+                                "{}Event details: {}events/view/{}".format(event_title, web_url,
+                                                                event_id))
+                    displayed.append(event_id)
                     return None
             mod.display(module,
                         ioc,
                         "NOT_FOUND",
-                        "Nothing found in Misp:%s database" % (web_url))
+                        "Nothing found in MISP:{} database".format(web_url))
             return None
+    elif response_status == 429:
+        mod.display(module,
+                    ioc,
+                    message_type="ERROR",
+                    string="MISP instance '{}' received too many requests (Response code: {}).".format(web_url, response_status))
     else:
         mod.display(module,
                     ioc,
                     message_type="ERROR",
-                    string="Misp connection status : %d" % (response_status))
+                    string="MISP instance '{}' connection status : {}".format(web_url, response_status))
