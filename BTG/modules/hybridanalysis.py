@@ -125,6 +125,12 @@ def get_color_positives(positives):
             colors.BOLD
         )
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
+
 def response_handler(response_text, response_status,
                      module, ioc, ioc_type, server_id=None):
     if response_status == 200:
@@ -135,6 +141,7 @@ def response_handler(response_text, response_status,
                         ioc,
                         message_type="ERROR",
                         string="hybridanalysis json_response was not readable.")
+            research_finished(module, ioc)
             return None
 
         if "count" in json_response and "search_terms" in json_response:
@@ -146,6 +153,7 @@ def response_handler(response_text, response_status,
                         ioc,
                         "NOT_FOUND",
                         "No specific threat found in hybridanalysis")
+                    research_finished(module, ioc)
                     return None
                 type = json_response["search_terms"][0]["id"]
                 url = "https://www.hybrid-analysis.com/advanced-search-results?terms[%s]=%s" % (type, ioc)
@@ -153,6 +161,7 @@ def response_handler(response_text, response_status,
                             ioc,
                             "FOUND",
                             "%s | %s/100 | %s" % (verdict, threat_score, url))
+                research_finished(module, ioc)
                 return None
         elif json_response:
             verdict = json_response[0]["verdict"]
@@ -162,6 +171,7 @@ def response_handler(response_text, response_status,
                     ioc,
                     "NOT_FOUND",
                     "No specific threat found in hybridanalysis")
+                research_finished(module, ioc)
                 return None
             url = "https://www.hybrid-analysis.com/sample/"+ioc
             display_array = []
@@ -176,15 +186,18 @@ def response_handler(response_text, response_status,
                         ioc,
                         "FOUND",
                         " | ".join(display_array))
+            research_finished(module, ioc)
             return None
         mod.display(module,
                     ioc,
                     "NOT_FOUND",
                     "Nothing found in hybridanalysis DB")
+        research_finished(module, ioc)
         return None
     else:
         mod.display(module,
                     ioc,
                     "ERROR",
                     "hybridanalysis API connection status %d" % response_status)
+        research_finished(module, ioc)
         return None

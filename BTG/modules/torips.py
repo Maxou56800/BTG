@@ -36,6 +36,12 @@ class Torips:
 
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         url = "https://raw.githubusercontent.com/SecOps-Institute/Tor-IP-Addresses/master/"
@@ -51,14 +57,18 @@ class Torips:
                             self.ioc,
                             "ERROR",
                             e)
+                self.research_finished()
                 return None
             if self.ioc in content:
                 mod.display(self.module_name,
                             self.ioc,
                             "FOUND",
                             "%s%s" % (url, path))
+                self.research_finished()
                 return None
         mod.display(self.module_name,
                     self.ioc,
                     "NOT_FOUND",
                     "Nothing found in Tor IPs feeds")
+        return None
+        self.research_finished()

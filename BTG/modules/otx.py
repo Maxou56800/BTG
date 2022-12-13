@@ -40,6 +40,13 @@ class Otx:
 
         self.Search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
+
     def Search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Search in Alienvault OTX ...")
         try:
@@ -65,12 +72,14 @@ class Otx:
                             self.ioc,
                             message_type="ERROR",
                             string="Please check if you have otx_api_keys field in btg.cfg")
+                self.research_finished()
                 return None
         except:
             mod.display(self.module_name,
                         self.ioc,
                         "ERROR",
                         "Could not perform the request, either you did not fill the otx_api_keys field or the key maximum request is reached")
+            self.research_finished()
             return None
         try:
             if self.ioc == str(result["general"]["indicator"]):
@@ -89,4 +98,5 @@ class Otx:
                         self.ioc,
                         message_type="NOT_FOUND",
                         string="Nothing found in OTX")
+        self.research_finished()
         return None

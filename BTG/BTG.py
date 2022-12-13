@@ -102,6 +102,8 @@ class BTG():
             matching_list = Utils.gen_matching_type_modules_list(modules, type)
             cluster.add_cluster(argument.lower(), matching_list, dictname, conn)
             self.run(argument.lower(), type, matching_list, queues)
+        # Add cluster for display INIT and MAIN logs
+        cluster.add_cluster("", ["INIT", "MAIN"], dictname, conn)
         mod.display("MAIN",
                     message_type="INFO",
                     string="Every IOCs have been enqueued, BTG is processing ...")
@@ -236,6 +238,7 @@ class Utils:
         script_dir = dirname(__file__)
         rel_path = 'data/modules_descriptor.csv'
         abs_path = join(script_dir, rel_path)
+        enabled_modules = Utils.gen_enabled_modules_list(modules)
         try:
             with open(abs_path, 'r') as csvfile:
                 try:
@@ -245,7 +248,7 @@ class Utils:
                             if row:
                                 if module == row[0]:
                                     types = row[1].split(',')
-                                    if type in types and mod.allowedToSearch(row[2]):
+                                    if type in types and mod.allowedToSearch(row[2], module=module) and module in enabled_modules:
                                         matching_list.append(module)
                 except:
                     mod.display("MAIN",
@@ -427,26 +430,27 @@ class Utils:
                 d[i], rem = divmod(rem, lst[i])
         return f.format(fmt, **d)
 
-    def tune_json_output(json_output, now_str, nb_modules, nb_ioc, duration_str):
+    def tune_json_output(json_output, now_str, total_modules, nb_ioc, duration_str):
         new_json = {}
+        new_json["btg_version"] = version
         new_json["finished_date"] = now_str
         new_json["research_duration"] = duration_str
-        new_json["nb_module"] = nb_modules
+        new_json["total_modules"] = total_modules
         new_json["nb_ioc"] = nb_ioc
         new_json["offline_mode"] = config["offline"]
         new_json["iocs"] = []
         for ioc_element in json_output:
             modules_used_for_ioc = len(ioc_element["modules"])
-            ioc_element["nb_module"] = modules_used_for_ioc
+            ioc_element["total_modules"] = modules_used_for_ioc
             new_json["iocs"].append(ioc_element)
 
         return new_json
 
-    def save_json_output(json_output, nb_modules, nb_ioc, duration_str):
+    def save_json_output(json_output, total_modules, nb_ioc, duration_str):
         now_str = datetime.now().strftime('%d-%m-%Y_%H:%M:%S')
         json_file ="{}.json".format(now_str)
         json_file_path = "%s/%s" % (json_folder, json_file)
-        json_output = Utils.tune_json_output(json_output, now_str, nb_modules, nb_ioc, duration_str)
+        json_output = Utils.tune_json_output(json_output, now_str, total_modules, nb_ioc, duration_str)
         try:
             with open(json_file_path, "w+") as f:
                 try:
@@ -605,6 +609,8 @@ def main(argv=None):
                 mod.display("MAIN",
                             message_type="ERROR",
                             string="Could not save json results: %s" % e)
+        mod.display("INIT", message_type="FINISHED")
+        mod.display("MAIN", message_type="FINISHED")
         if config["display_end_stats"]:
             
             print("\nAll works done:\n   in %s" % (delta_time))
@@ -634,6 +640,9 @@ def main(argv=None):
         time.sleep(1)
         print("\n%s%sA FATAL_ERROR occured or you pressed CTRL+C" % (colors.BOLD, colors.FATAL_ERROR))
         print("Closing the worker, and clearing pending jobs ...%s\n" % (colors.NORMAL))
+
+        mod.display("INIT", message_type="FINISHED")
+        mod.display("MAIN", message_type="FINISHED")
 
         try:
             redis_utils.shutdown(processes, working_going, failed_queue,

@@ -362,6 +362,11 @@ def get_color(positives):
             colors.BOLD
         )
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
 
 def response_handler(response_text, response_status,
                      module, ioc, ioc_type, server_id=None):
@@ -379,6 +384,7 @@ def response_handler(response_text, response_status,
                         ioc,
                         "ERROR",
                         "VirusTotal json_response was not readable.")
+            research_finished(module, ioc)
             return None
 
         found = False
@@ -404,4 +410,5 @@ def response_handler(response_text, response_status,
                     ioc,
                     "ERROR",
                     "VirusTotal response.code_status : %d" % (response_status))
+    research_finished(module, ioc)
     return None

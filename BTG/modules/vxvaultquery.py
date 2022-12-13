@@ -39,6 +39,11 @@ class Vxvaultquery():
 
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
 
     def search(self):
         mod.display(self.module_name,
@@ -46,6 +51,7 @@ class Vxvaultquery():
                     "INFO",
                     "Search in VXVault with queries ...")
         self.webpage_crawling()
+        self.research_finished()
 
 
     def webpage_crawling(self):

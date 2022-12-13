@@ -85,6 +85,12 @@ def get_color(positives):
             colors.BOLD
         )
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
+
 def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     if response_status == 200:
         try:
@@ -94,12 +100,14 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                         ioc,
                         message_type="ERROR",
                         string="AbuseIPDB json_response was not readable.")
+            research_finished(module, ioc)
             return None
         if json_response["data"]["totalReports"] == 0 and json_response["data"]["abuseConfidenceScore"] == 0:
             mod.display(module,
                     ioc,
                     "NOT_FOUND",
                     "This addresse IP seem to be clean for AbuseIPDB")
+            research_finished(module, ioc)
             return None
         mod.display(module,
                     ioc,
@@ -111,9 +119,12 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                         "https://www.abuseipdb.com/check/{}".format(ioc)
                     )
         )
+        research_finished(module, ioc)
         return None
     else:
         mod.display(module,
                     ioc,
                     message_type="ERROR",
                     string="AbuseIPDB connection status : %d" % (response_status))
+    research_finished(module, ioc)
+    return None

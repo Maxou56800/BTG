@@ -58,6 +58,7 @@ class Cuckoosandbox:
                         self.ioc,
                         "DEBUG",
                         "CuckooSandbox search is disabled, because online instance is True and Offline mode is True in config file")
+            research_finished(self.module, ioc)
             return None
         length = len(self.config['cuckoosandbox_api_url'])
         if length != len(self.config['cuckoosandbox_web_url']) \
@@ -66,6 +67,7 @@ class Cuckoosandbox:
                         self.ioc,
                         "ERROR",
                         "Cuckoosandbox fields in btg.cfg are missfilled, checkout commentaries.")
+            research_finished(self.module, ioc)
             return None
 
         for indice in range(len(self.config['cuckoosandbox_api_url'])):
@@ -103,30 +105,38 @@ class Cuckoosandbox:
                         "Check if you have filled cuckoosandbox fields in btg.cfg")
 
 
-def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
-        web_url = cfg['cuckoosandbox_api_url'][server_id]
-        if response_status == 200:
-            try:
-                json_response = json.loads(response_text)
-            except:
-                mod.display(module,
-                            ioc,
-                            "ERROR",
-                            "CuckooSandbox json_response was not readable.")
-                return None
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
 
-            id_analysis = json_response["sample"]["id"]
-            mod.display(module,
-                        ioc,
-                        "FOUND",
-                        "%s/view/%s" % (web_url, id_analysis))
-        elif response_status == 404:
-            mod.display(module,
-                        ioc,
-                        "NOT_FOUND",
-                        "Nothing found in CuckooSandbox")
-        else:
+def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
+    web_url = cfg['cuckoosandbox_api_url'][server_id]
+    if response_status == 200:
+        try:
+            json_response = json.loads(response_text)
+        except:
             mod.display(module,
                         ioc,
                         "ERROR",
-                        "CuckooSandbox connection status : %d for server : %s" % (response_status,web_url))
+                        "CuckooSandbox json_response was not readable.")
+            research_finished(module, ioc)
+            return None
+        id_analysis = json_response["sample"]["id"]
+        mod.display(module,
+                    ioc,
+                    "FOUND",
+                    "%s/view/%s" % (web_url, id_analysis))
+    elif response_status == 404:
+        mod.display(module,
+                    ioc,
+                    "NOT_FOUND",
+                    "Nothing found in CuckooSandbox")
+    else:
+        mod.display(module,
+                    ioc,
+                    "ERROR",
+                    "CuckooSandbox connection status : %d for server : %s" % (response_status,web_url))
+    research_finished(module, ioc)
+    return None

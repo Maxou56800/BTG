@@ -45,6 +45,12 @@ class Misp_Crawler:
 
         self.Search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def Search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Search in misp crawler...")
         with requests.Session() as s:
@@ -69,7 +75,9 @@ class Misp_Crawler:
                             self.ioc,
                             message_type="ERROR",
                             string="Could not perform the request, checkout btg.cfg at [%s]" % (self.module_name))
-
+        self.research_finished()
+        return None
+        
     def searchAttribute(self, s):
         if ("misp_crawler_url" in self.config and
                 "user_agent" in self.config and

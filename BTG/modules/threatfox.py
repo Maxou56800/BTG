@@ -29,7 +29,7 @@ class threatfox():
         self.config = config
         self.module_name = __name__.split(".")[-1]
         self.types = ["URL", "domain", "IPv4", "MD5", "SHA256"]
-        self.search_method = "Online"
+        self.search_method = "Cache"
         self.description = "Search IOC in THREAT fox database"
         self.author = "Maxou56800"
         self.creation_date = "12-08-2022"
@@ -37,6 +37,13 @@ class threatfox():
         self.ioc = ioc
 
         self.search()
+
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
 
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Search in THREAT fox ...")
@@ -51,12 +58,14 @@ class threatfox():
                         self.ioc,
                         "ERROR",
                         e)
+            self.research_finished()
             return None
         if content.find(self.ioc) == -1:
             mod.display(self.module_name,
                         self.ioc,
                         "NOT_FOUND",
                         "Nothing found in ThreatFox")
+            self.research_finished()
             return None
         else:
             try:
@@ -66,6 +75,7 @@ class threatfox():
                             self.ioc,
                             "ERROR",
                             "Could not parse CSV feed")
+                self.research_finished()
                 return None
             for row in reader:
                 if row[0][0] == "#":
@@ -103,4 +113,7 @@ class threatfox():
                                         row[11].replace('"', "").strip()
                                     )
                         )
+                    self.research_finished()
                     return None
+        self.research_finished()
+        return None

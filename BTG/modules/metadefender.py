@@ -109,6 +109,11 @@ def get_color(positives):
             colors.BOLD
         )
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
 
 def response_handler(response_text, response_status,
                      module, ioc, ioc_type, server_id=None, ):
@@ -120,6 +125,7 @@ def response_handler(response_text, response_status,
                         ioc,
                         "ERROR",
                         "MetaDefender json_response was not readable.")
+            research_finished(module, ioc)
             return None
 
         if ioc_type == "URL":
@@ -129,6 +135,7 @@ def response_handler(response_text, response_status,
                             ioc,
                             "NOT_FOUND",
                             "Zero AV detected malicious activity")
+                research_finished(module, ioc)
                 return None
             mod.display(module,
                         ioc,
@@ -145,6 +152,7 @@ def response_handler(response_text, response_status,
                             ioc,
                             "NOT_FOUND",
                             "Zero AV detected malicious activity")
+                research_finished(module, ioc)
                 return None
             mod.display(module,
                         ioc,
@@ -160,6 +168,7 @@ def response_handler(response_text, response_status,
                             ioc,
                             "NOT_FOUND",
                             "Zero AV detected malicious activity")
+                research_finished(module, ioc)
                 return None
             mod.display(module,
                         ioc,
@@ -175,12 +184,12 @@ def response_handler(response_text, response_status,
             url_result = "https://metadefender.opswat.com/results/file/{}/hash/overview"
             
 
-            if json_response['scan_results']['scan_all_result_a'] == "No Threat Detected":
+            if json_response['scan_results']['scan_all_result_a'].lower() == "no threat detected":
                 mod.display(module,
                             ioc,
                             "NOT_FOUND",
                             "Nothing found in MetaDefender database")
-            if json_response['scan_results']['scan_all_result_a'] == "In queue":
+            elif json_response['scan_results']['scan_all_result_a'] == "In queue":
                 mod.display(module,
                             ioc,
                             "NOT_FOUND",
@@ -217,4 +226,5 @@ def response_handler(response_text, response_status,
                     ioc,
                     message_type="ERROR",
                     string="MetaDefender response.code_status : %d" % (response_status))
+    research_finished(module, ioc)
     return None

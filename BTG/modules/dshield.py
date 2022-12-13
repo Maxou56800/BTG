@@ -76,6 +76,12 @@ def get_color(positives):
             colors.BOLD
         )
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
+
 def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     if response_status == 200:
         root = ET.fromstring(response_text)
@@ -95,6 +101,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                     "NOT_FOUND",
                     "No reports and no honeypot attacks from this IP address"
             )
+            research_finished(module, ioc)
             return None
         mod.display(module,
                     ioc,
@@ -104,7 +111,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                         "Total honeypot attacks: {}".format(get_color(honeypot_attacks)),
                     ])
         )
-
+        research_finished(module, ioc)
         return None
     else:
         mod.display(module,

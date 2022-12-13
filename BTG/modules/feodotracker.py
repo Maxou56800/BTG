@@ -59,6 +59,13 @@ class feodotracker():
         else:
             return status
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
+
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Search in FeodoTracker ...")
         url = "https://feodotracker.abuse.ch/downloads/"
@@ -75,12 +82,14 @@ class feodotracker():
                         self.ioc,
                         "ERROR",
                         e)
+            self.research_finished()
             return None
         if content.find(self.ioc) == -1:
             mod.display(self.module_name,
                         self.ioc,
                         "NOT_FOUND",
                         "Nothing found in FeodoTracker")
+            self.research_finished()
             return None
         else:
             try:
@@ -101,4 +110,5 @@ class feodotracker():
                                     row[5], row[1], row[2], self.get_color(row[3])
                                 )
                     )
+            self.research_finished()
             return None

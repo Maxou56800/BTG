@@ -44,6 +44,7 @@ class Mwdb:
                         self.ioc,
                         "DEBUG",
                         "MWDB search is disabled, because online instance is True and Offline mode is True in config file")
+            self.research_finished()
             return None
         length = len(self.config['mwdb_api_url'])
         if length != len(self.config['mwdb_api_keys']) and length <= 0:
@@ -51,6 +52,7 @@ class Mwdb:
                         self.ioc,
                         "ERROR",
                         "MWDB fields in btg.cfg are missfilled, checkout commentaries.")
+            self.research_finished()
             return None
         for indice, mwdb_url in enumerate(self.config['mwdb_api_url']):
             self.headers = {
@@ -88,6 +90,12 @@ class Mwdb:
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
+
 def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     web_url = cfg['mwdb_api_url'][server_id]
     if web_url[-1] == "/":
@@ -100,6 +108,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                         ioc,
                         message_type="ERROR",
                         string="MWDB json_response was not readable.")
+            research_finished(module, ioc)
             return None
         
         if ioc_type in ["MD5", "SHA1", "SHA256", "SHA512"]:
@@ -108,6 +117,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                             ioc,
                             "NOT_FOUND",
                             "Nothing found in MWDB:%s database" % (web_url))
+                research_finished(module, ioc)
                 return None
             for file in json_response["files"]:
                 tag_to_display = []
@@ -117,6 +127,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                     ioc,
                     "FOUND",
                     "{}/file/{} | Tags: {}".format(web_url, file["sha256"], ", ".join(tag_to_display)))
+                research_finished(module, ioc)
                 return None
         elif ioc_type in ["IPv4", "IPv6", "domain", "URL"]:
             if len(json_response["configs"]) == 0:
@@ -124,6 +135,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                             ioc,
                             "NOT_FOUND",
                             "Nothing found in MWDB:%s database" % (web_url))
+                research_finished(module, ioc)
                 return None
             families = []
             for config in json_response["configs"]:
@@ -147,15 +159,19 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                     search_url
                 )
             )
+            research_finished(module, ioc)
             return None
         else:
             mod.display(module,
                 ioc,
                 "ERROR",
                 "Wrong IOC type: {}".format(json.dumps(json_response, indent=4)))
+        research_finished(module, ioc)
         return None
     else:
         mod.display(module,
                     ioc,
                     message_type="ERROR",
                     string="MWDB connection status : %d" % (response_status))
+    research_finished(module, ioc)
+    return None

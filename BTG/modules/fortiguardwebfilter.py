@@ -61,6 +61,12 @@ class FortiguardWebFilter:
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
+
 def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     if response_status == 200:
         ioc_category = re.findall('<meta name="description" property="description" content="Category: (.*)"', response_text)
@@ -70,6 +76,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                     "NOT_FOUND",
                     "Not category for this IOC"
             )
+            research_finished(module, ioc)
             return None
         # Categories extract from: https://www.fortiguard.com/webfilter/categories
         risk_categories = [
@@ -87,6 +94,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                     "NOT_FOUND",
                     "This IOC is not in a security risk category: {}".format(ioc_category[0])
             )
+            research_finished(module, ioc)
             return None
         
         mod.display(module,
@@ -99,3 +107,5 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                     ioc,
                     message_type="ERROR",
                     string="urlscan connection status : %d" % (response_status))
+    research_finished(module, ioc)
+    return None

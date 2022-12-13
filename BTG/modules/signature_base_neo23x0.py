@@ -30,6 +30,12 @@ class Signature_base_neo23x0:
 
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         url = "https://raw.githubusercontent.com/Neo23x0/signature-base/master/iocs/"
@@ -39,6 +45,7 @@ class Signature_base_neo23x0:
         elif self.type in ["MD5", "SHA1", "SHA256"]:
             path = "hash-iocs.txt"
         else:
+            self.research_finished()
             return None
         try:
             content = Cache(self.module_name, url, path, self.search_method).content
@@ -47,6 +54,7 @@ class Signature_base_neo23x0:
                         self.ioc,
                         "ERROR",
                         e)
+            self.research_finished()
             return None
         
         if content.find(self.ioc) == -1:
@@ -54,7 +62,7 @@ class Signature_base_neo23x0:
                     self.ioc,
                     "NOT_FOUND",
                     "Nothing found in Signature-Base feeds")
-
+            self.research_finished()
             return None
         
         if self.type in ["IPv4", "domain"]:
@@ -84,5 +92,7 @@ class Signature_base_neo23x0:
                         self.ioc,
                         "FOUND",
                         "{}".format(title))
-                    
+            self.research_finished()
             return None
+        self.research_finished()
+        return None

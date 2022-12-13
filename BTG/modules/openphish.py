@@ -39,6 +39,12 @@ class Openphish:
 
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Searching for OpenPhish...")
         url = "https://openphish.com/"
@@ -53,6 +59,7 @@ class Openphish:
                             self.ioc,
                             "ERROR",
                             e)
+                self.research_finished()
                 return None
             for line in content.split("\n"):
                 try:
@@ -65,6 +72,7 @@ class Openphish:
                                     self.ioc,
                                     "FOUND",
                                     "%s%s" % (url, path))
+                        self.research_finished()
                         return None
                 elif self.type == "IPv4" and validators.ipv4(midle):
                     if self.ioc == midle:
@@ -72,6 +80,7 @@ class Openphish:
                                     self.ioc,
                                     "FOUND",
                                     "%s%s" % (url, path))
+                        self.research_finished()
                         return None
                 elif self.type == "domain" and validators.domain(midle):
                     if midle == self.ioc:
@@ -79,8 +88,11 @@ class Openphish:
                                     self.ioc,
                                     "FOUND",
                                     "%s%s" % (url, path))
+                        self.research_finished()
                         return None
         mod.display(self.module_name,
                     self.ioc,
                     "NOT_FOUND",
                     "Nothing found in openphish feeds")
+        self.research_finished()
+        return None

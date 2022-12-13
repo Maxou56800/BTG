@@ -42,6 +42,7 @@ class Viper:
                         self.ioc,
                         "DEBUG",
                         "Viper search is disabled, because online instance is True and Offline mode is True in config file")
+            self.research_finished()
             return None
         length = len(self.config['viper_server'])
         if length != len(self.config['viper_api_key']) and length <= 0:
@@ -49,6 +50,7 @@ class Viper:
                         self.ioc,
                         "ERROR",
                         "Viper fields in btg.cfg are missfilled, checkout commentaries.")
+            self.research_finished()
             return None
         for indice in range(len(self.config['viper_server'])):
             server = self.config['viper_server'][indice]
@@ -77,12 +79,14 @@ class Viper:
                             self.ioc,
                             message_type="NOT_FOUND",
                             string="Nothing found in Viper DB")
+                self.research_finished()
                 return None
         else:
             mod.display(self.module_name,
                         self.ioc,
                         "ERROR",
                         "Viper API connection status %d" % response.status_code)
+            self.research_finished()
             return None
 
     def checkToken(self, server, api_key):
@@ -96,6 +100,12 @@ class Viper:
         except KeyError:
             return False
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def Search(self, server, api_key):
         mod.display(self.module_name, self.ioc, "INFO", "Search in Viper ...")
 
@@ -103,6 +113,7 @@ class Viper:
             if "viper_server" in self.config and "viper_api_key" in self.config:
                 if not self.checkToken(server, api_key):
                     mod.display(self.module_name, self.ioc, "ERROR", "Bad API key")
+                    self.research_finished()
                     return None
                 if self.type in self.types:
                     result_json = self.viper_api(server, api_key)
@@ -111,9 +122,11 @@ class Viper:
                             self.ioc,
                             message_type="ERROR",
                             string="Please check if you have viper fields in btg.cfg")
+                self.research_finished()
                 return None
         except Exception as e:
             mod.display(self.module_name, self.ioc, "ERROR", e)
+            self.research_finished()
             return None
 
         if result_json:
@@ -141,6 +154,7 @@ class Viper:
                             self.ioc,
                             "FOUND",
                             "%s%s%s" % (tags, id, name))
+                self.research_finished()
                 return None
 
             elif self.type in ["URL", "domain", "IPv4"]:
@@ -153,6 +167,7 @@ class Viper:
                                         malware["data"]["id"],
                                         malware["data"]["name"],
                                         malware["data"]["sha1"]))
+                        self.research_finished()
                         return None
             else:
                 mod.display(self.module_name,
@@ -164,3 +179,5 @@ class Viper:
                         self.ioc,
                         message_type="NOT_FOUND",
                         string="Nothing found in Viper DB")
+        self.research_finished()
+        return None

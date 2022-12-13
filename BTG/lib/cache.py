@@ -41,6 +41,7 @@ class Cache:
         self.filename = self.new_filename = filename
         self.temp_folder = "%s%s/" % (self.config["temporary_cache_path"], self.module_name)
         self.is_zip_compressed=False
+        self.status_code = None
         if not headers:
             self.headers = self.config["user_agent"]
         else:
@@ -137,6 +138,7 @@ class Cache:
             return
         except:
             raise
+        self.status_code = r.status_code
         if r.status_code == 200:
             if not exists("%s.lock" % self.temp_file):
                 open("{}.lock".format(self.temp_file), 'a').close()

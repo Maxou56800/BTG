@@ -37,6 +37,12 @@ class Cybercrimetracker:
 
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         url = "https://cybercrime-tracker.net/"
@@ -53,6 +59,7 @@ class Cybercrimetracker:
                             self.ioc,
                             "ERROR",
                             e)
+                self.research_finished()
                 return None
             for line in content.split("\n"):
                 if self.ioc in line:
@@ -60,8 +67,10 @@ class Cybercrimetracker:
                                 self.ioc,
                                 "FOUND",
                                 "%s%s" % (url, path))
+                    self.research_finished()
                     return None
         mod.display(self.module_name,
                     self.ioc,
                     "NOT_FOUND",
                     "Nothing found in Cybercrimetracker")
+        self.research_finished()

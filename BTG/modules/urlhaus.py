@@ -41,6 +41,12 @@ class urlhaus():
 
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Search in URLhaus ...")
         url = "https://urlhaus.abuse.ch/downloads/"
@@ -54,12 +60,14 @@ class urlhaus():
                         self.ioc,
                         "ERROR",
                         e)
+            self.research_finished()
             return None
         if content.find(self.ioc) == -1:
             mod.display(self.module_name,
                         self.ioc,
                         "NOT_FOUND",
                         "Nothing found in URLhaus")
+            self.research_finished()
             return None
         else:
             try:
@@ -69,6 +77,7 @@ class urlhaus():
                             self.ioc,
                             "ERROR",
                             "Could not parse CSV feed")
+                self.research_finished()
                 return None
             for row in reader:
                 if row[0][0] == "#":
@@ -79,3 +88,5 @@ class urlhaus():
                                 "FOUND",
                                 "{} - C2 status: {} - Tags: {}".format(row[7], row[3], row[6]))
                     #return None
+        self.research_finished()
+        return None

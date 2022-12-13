@@ -37,6 +37,12 @@ class Vxvault:
 
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         url = "http://vxvault.net/"
@@ -51,6 +57,7 @@ class Vxvault:
                             self.ioc,
                             "ERROR",
                             e)
+                self.research_finished()
                 return None
             for line in content.split("\n"):
                 if self.ioc in line:
@@ -58,8 +65,11 @@ class Vxvault:
                                 self.ioc,
                                 "FOUND",
                                 "%s%s" % (url, path))
+                    self.research_finished()
                     return None
         mod.display(self.module_name,
                     self.ioc,
                     "NOT_FOUND",
                     "Nothing found in vxvault feeds")
+        self.research_finished()
+        return None

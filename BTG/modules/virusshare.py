@@ -80,6 +80,12 @@ def get_color(positives):
             colors.BOLD
         )
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
+
 def response_handler(response_text, response_status,
                      module, ioc, ioc_type, server_id=None, ):
     if response_status == 200:
@@ -90,6 +96,7 @@ def response_handler(response_text, response_status,
                         ioc,
                         "ERROR",
                         "VirusShare json_response was not readable.")
+            research_finished(module, ioc)
             return None
 
         if "response" in json_response and json_response["response"] == 0:
@@ -97,6 +104,7 @@ def response_handler(response_text, response_status,
                         ioc,
                         "NOT_FOUND",
                         "VirusShare unable to reply a response")
+                research_finished(module, ioc)
                 return None
         
         url_result = "https://virusshare.com/file?{}".format(json_response["sha256"])
@@ -112,11 +120,14 @@ def response_handler(response_text, response_status,
                             ioc,
                             "NOT_FOUND",
                             "No hash found")
+        research_finished(module, ioc)
         return None
     else:
         mod.display(module,
                     ioc,
                     message_type="ERROR",
                     string="MetaDefender response.code_status : %d" % (response_status))
+        research_finished(module, ioc)
         return None
+    research_finished(module, ioc)
     return None

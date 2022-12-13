@@ -30,6 +30,12 @@ class Blocklistde:
 
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         url = "https://lists.blocklist.de/lists/"
@@ -54,6 +60,7 @@ class Blocklistde:
                             self.ioc,
                             "ERROR",
                             e)
+                self.research_finished()
                 return None
             if self.ioc in content:
                 found = True
@@ -67,4 +74,5 @@ class Blocklistde:
                         self.ioc,
                         "NOT_FOUND",
                         "Nothing found in Blocklist.de feeds")
+        self.research_finished()
         return None

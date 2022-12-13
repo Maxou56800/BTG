@@ -97,6 +97,12 @@ def get_color(risk):
     else:
         return risk
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
+
 def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     if response_status == 200:
         try:
@@ -106,18 +112,21 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                         ioc,
                         message_type="ERROR",
                         string="Pulsedive json_response was not readable.")
+            research_finished(module, ioc)
             return None
         if not len(json_response["results"]):
             mod.display(module,
                     ioc,
                     "NOT_FOUND",
                     "This addresse IOC not listed in Pulsedive")
+            research_finished(module, ioc)
             return None
         if json_response["results"][0]["risk"].lower() == "none":
             mod.display(module,
                     ioc,
                     "NOT_FOUND",
                     "This addresse IOC seem to be clean for Pulsedive (risk: none)")
+            research_finished(module, ioc)
             return None
 
         mod.display(module,
@@ -128,9 +137,12 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                         json_response["results"][0]["iid"]
                     )
         )
+        research_finished(module, ioc)
         return None
     else:
         mod.display(module,
                     ioc,
                     message_type="ERROR",
                     string="Pulsedive connection status : %d" % (response_status))
+        research_finished(module, ioc)
+        return None

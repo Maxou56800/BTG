@@ -76,7 +76,7 @@ class module:
                                                colors.NORMAL)
 
         log_folder = config["log_folder"]
-        if message_type in ["FOUND", "NOT_FOUND", "ERROR", "WARNING", "INFO", "DEBUG"]:
+        if message_type in ["FOUND", "NOT_FOUND", "ERROR", "WARNING", "INFO", "DEBUG", "FINISHED"]:
             # Logs founds in specific file
             if message_type == "FOUND":
                 log_path = log_folder + config["log_found_file"]
@@ -120,7 +120,8 @@ class module:
             c = cluster.edit_cluster(ioc, research_module, message,
                                      conn, lockname, dictname)
             if "display_group_by_ioc" in config and config["display_group_by_ioc"]:
-                cluster.print_cluster(c, conn)
+                if c:
+                    cluster.print_cluster(c, conn)
                 return None
             if message_type == "NOT_FOUND" and not config["display_not_found"]:
                 return None
@@ -128,7 +129,7 @@ class module:
                 return None
             elif message_type == "ERROR" and not config["display_errors"]:
                 return None
-            elif message_type == "INFO" and not config["display_info"]:
+            elif message_type in ["INFO", "FINISHED"] and not config["display_info"]:
                 return None
             elif message_type == "DEBUG" and not config["debug"]:
                 return None
@@ -147,7 +148,7 @@ class module:
             return None
 
     @classmethod
-    def allowedToSearch(self, status):
+    def allowedToSearch(self, status, module=""):
         config = Config.get_instance()
         """
             Input: "Online", "Onpremises"
@@ -157,8 +158,17 @@ class module:
             here the module claims to be related to an on premises service
             , i.e. being inside researcher network, so we allow the lookup
 
-            modules: misp, cuckoo, mwdb
+            modules: misp, cuckoosandbox, mwdb, viper
             '''
+            if config["offline"]:
+                if module == "misp" and config["misp_is_online_instance"]:
+                    return False
+                elif module == "cuckoosandbox" and config["cuckoosandbox_is_online_instance"]:
+                    return False
+                elif module == "mwdb" and config["mwdb_is_online_instance"]:
+                    return False
+                elif module == "viper" and config["viper_is_online_instance"]:
+                    return False
             return True
         elif status == "Online" and not config["offline"]:
             '''
@@ -262,6 +272,7 @@ class colors:
     if system() == "Windows" or config["terminal_color"] is False:
         DEBUG = ''
         INFO = ''
+        FINISHED = ''
         FOUND = ''
         WARNING = ''
         ERROR = ''
@@ -273,6 +284,7 @@ class colors:
     else:
         DEBUG = '\033[38;5;13m'        # LIGHT_MAGENTA
         INFO = '\033[38;5;117m'        # LIGHT_BLUE
+        FINISHED = '\033[38;5;117m'    # LIGHT_BLUE
         FOUND = '\033[38;5;10m'        # GREEN
         GOOD = '\033[38;5;10m'         # GREEN
         NOT_FOUND = '\033[38;5;11m'    # YELLOW
@@ -288,6 +300,7 @@ class colors:
         BOLD = '\033[1m'               # BOLD
         MODULE = '\033[38;5;199m'      # PURPLE
         NB_ERROR = '\033[38;5;9m'      # RED
+        
 
 class ioc_formater:
 

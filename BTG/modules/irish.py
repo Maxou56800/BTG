@@ -59,6 +59,11 @@ class Irish():
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
 
 def response_handler(response_text, response_status, module,
                      ioc, ioc_type, server_id=None):
@@ -70,6 +75,7 @@ def response_handler(response_text, response_status, module,
                         ioc,
                         message_type="ERROR",
                         string="Irish json_response was not readable.")
+            research_finished(module, ioc)
             return None
         if "You have to try harder!" in json_content:
             mod.display(module,
@@ -77,21 +83,25 @@ def response_handler(response_text, response_status, module,
                 "NOT_FOUND",
                 "Nothing found in irsih DB"
             )
+            research_finished(module, ioc)
             return None
         mod.display(module,
                     ioc,
                     "FOUND",
                     "URL: https://iris-h.services/pages/report/%s" % (ioc))
+        research_finished(module, ioc)
         return None
     elif response_status == 404:
         mod.display(module,
                     ioc,
                     "NOT_FOUND",
                     "Nothing found in irsih DB")
+        research_finished(module, ioc)
         return None
     else:
         mod.display(module,
                     ioc,
                     message_type="ERROR",
                     string="Irish connection status : %d" % (response_status))
+        research_finished(module, ioc)    
         return None

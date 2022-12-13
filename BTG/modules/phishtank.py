@@ -41,6 +41,12 @@ class PhishTank:
             return None
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def clean_ioc(self, ioc):
         extracted = tldextract.extract(ioc)
         orig = ".".join(extracted)
@@ -79,6 +85,7 @@ class PhishTank:
                             self.ioc,
                             "ERROR",
                             e)
+                self.research_finished()
                 return None
             if not content.find(self.ioc):
                 continue
@@ -105,4 +112,5 @@ class PhishTank:
                         self.ioc,
                         "NOT_FOUND",
                         "Nothing found in PhishTank feeds")
+        self.research_finished()
         return None

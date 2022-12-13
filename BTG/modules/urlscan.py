@@ -59,6 +59,12 @@ class urlscan:
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
+
 def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     if response_status == 200:
         try:
@@ -68,12 +74,14 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                         ioc,
                         message_type="ERROR",
                         string="urlscan json_response was not readable.")
+            research_finished(module, ioc)
             return None
         if json_response["total"] == 0:
             mod.display(module,
                     ioc,
                     "NOT_FOUND",
                     "This addresse IP seem to be clean for urlscan")
+            research_finished(module, ioc)
             return None
         search_url = 'https://urlscan.io/search/#{}'.format(urllib.parse.quote('task.url:"'+ioc+'"'))
         nb_elements = len(json_response["results"])
@@ -87,15 +95,19 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                     ioc,
                     "NOT_FOUND",
                     "No tags attribute, you need to check manualy | Search URL: {}".format(search_url))
+            research_finished(module, ioc)
             return None
         mod.display(module,
                     ioc,
                     "FOUND",
                     "Tags: {} | Search URL: {}".format(", ".join(all_tags), search_url)
         )
+        research_finished(module, ioc)
         return None
     else:
         mod.display(module,
                     ioc,
                     message_type="ERROR",
                     string="urlscan connection status : %d" % (response_status))
+        research_finished(module, ioc)
+        return None

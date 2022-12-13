@@ -39,6 +39,12 @@ class Malshare():
 
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         url = "https://malshare.com/"
@@ -48,27 +54,36 @@ class Malshare():
                                                                self.ioc)
             ]
             for path in paths:
-                try:
-                    content = json.loads(Cache(self.module_name,
+                req = Cache(self.module_name,
                                                url,
                                                path,
-                                               self.search_method).content)
+                                               self.search_method)
+                if req.status_code == 404:
+                    mod.display(self.module_name,
+                            self.ioc,
+                            "NOT_FOUND",
+                            "Nothing Found in Malshare feeds")
+                    self.research_finished()
+                    return None
+                try:
+                    content = json.loads(req.content)
                     saved_urls = []
                     if "MD5" not in content:
                         mod.display(self.module_name,
                             self.ioc,
                             "NOT_FOUND",
                             "Nothing Found in Malshare feeds")
+                        self.research_finished()
                         return None
                     if "SOURCES" in content:
                         for malware_url in content["SOURCES"]:
                             saved_urls.append(malware_url.replace("http", "hxxp"))
-
                     else:
                         mod.display(self.module_name,
                                     self.ioc,
                                     "FOUND",
                                     "https://malshare.com/sample.php?action=detail&hash={}".format(self.ioc))
+                        self.research_finished()
                         return None
                 except NameError:
                     mod.display(self.module_name,
@@ -76,12 +91,18 @@ class Malshare():
                                 "NOT_FOUND",
                                 "Nothing Found in Malshare feeds")
                 except ValueError as e:
-                    mod.display(self.module_name,
-                                self.ioc,
-                                "ERROR",
-                                "Malshare connection status : %s" % e)
+                    if req.content.strip() == "":
+                        mod.display(self.module_name,
+                            self.ioc,
+                            "NOT_FOUND",
+                            "Nothing Found in Malshare feeds")
+                    else:
+                        mod.display(self.module_name, self.ioc, "DEBUG", "Content value: {}".format(req.content))
+                        mod.display(self.module_name,
+                                    self.ioc,
+                                    "ERROR",
+                                    "Malshare connection status : %s" % e)
                 except:
-                    raise
                     mod.display(self.module_name,
                                 self.ioc,
                                 "ERROR",
@@ -91,4 +112,5 @@ class Malshare():
                         self.ioc,
                         "ERROR",
                         "You must have a malshare api key to use this module ")
-            return None
+        self.research_finished()
+        return None

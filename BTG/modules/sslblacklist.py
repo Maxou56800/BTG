@@ -37,6 +37,12 @@ class Sslblacklist():
 
         self.search()
 
+    def research_finished(self):
+        mod.display(self.module_name,
+                        self.ioc,
+                        "FINISHED")
+        return
+
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         url = "https://sslbl.abuse.ch/blacklist/"
@@ -52,6 +58,7 @@ class Sslblacklist():
                             self.ioc,
                             "ERROR",
                             e)
+                self.research_finished()
                 return None
             for line in content.split("\n"):
                 if self.ioc in line:
@@ -60,8 +67,11 @@ class Sslblacklist():
                                 self.ioc,
                                 "FOUND",
                                 "%s - %s%s" % (infos[2], url, path))
+                    self.research_finished()
                     return None
         mod.display(self.module_name,
                     self.ioc,
                     "NOT_FOUND",
                     "Nothing found in sslblacklist feeds")
+        self.research_finished()
+        return None

@@ -54,6 +54,7 @@ class Misp:
                         self.ioc,
                         "DEBUG",
                         "MISP search is disabled, because online instance is True and Offline mode is True in config file")
+            research_finished(self.module, ioc)
             return None
         length = len(self.config['misp_url'])
         if length != len(self.config['misp_key']) and length <= 0:
@@ -61,6 +62,7 @@ class Misp:
                         self.ioc,
                         "ERROR",
                         "MISP fields in btg.cfg are missfilled, checkout commentaries.")
+            research_finished(self.module, ioc)
             return None
         # Add tail slashe to MISP URLs
         self.config['misp_url'] = [u if u.endswith('/') else u + '/' for u in self.config['misp_url']]
@@ -96,6 +98,11 @@ class Misp:
         json_request = json.dumps(request)
         store_request(self.queues, json_request)
 
+def research_finished(module, ioc, message=""):
+    mod.display(module,
+                    ioc,
+                    "FINISHED")
+    return
 
 def response_handler(response_text, response_status, module, ioc, ioc_type, server_id):
     web_url = cfg['misp_url'][server_id]
@@ -109,6 +116,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                         ioc,
                         message_type="ERROR",
                         string="MISP json_response was not readable.")
+            research_finished(module, ioc)
             return None
 
         if "Attribute" in json_response["response"]:
@@ -125,11 +133,13 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                                 "{}Event details: {}events/view/{}".format(event_title, web_url,
                                                                 event_id))
                     displayed.append(event_id)
+                    research_finished(module, ioc)
                     return None
             mod.display(module,
                         ioc,
                         "NOT_FOUND",
                         "Nothing found in MISP:{} database".format(web_url))
+            research_finished(module, ioc)
             return None
     elif response_status == 429:
         mod.display(module,
@@ -141,3 +151,5 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                     ioc,
                     message_type="ERROR",
                     string="MISP instance '{}' connection status : {}".format(web_url, response_status))
+    research_finished(module, ioc)
+    return None
