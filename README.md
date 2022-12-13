@@ -62,7 +62,7 @@ Many knowledge-bases of malicious known activity (aka [IOC](https://en.wikipedia
 BTG needs a redis server. You can install it on the same host: 
 
 ```
-apt install redis-server
+$ sudo apt install redis-server
 ```
 
 ##### Install requirements and clone the project

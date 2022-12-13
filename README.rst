@@ -9,10 +9,10 @@ This tool allows you to qualify one or more potential malicious
 observables of various type (URL, MD5, SHA1, SHA256, SHA512, IPv4, IPv6,
 domain etc..). You can run this tool with a Linux environement.
 
-.. figure:: http://pix.toile-libre.org/upload/original/1482330236.png
-   :alt: BTG with TOR IP
+.. figure:: ./img/btg.png
+   :alt: BTG Demo
 
-   BTG with TOR IP
+   BTG Demo
 
 The `first versions <https://github.com/conix-security/BTG>`__ were
 developed by Conix collaborators. `This
@@ -98,9 +98,10 @@ BTG needs a redis server. You can install it on the same host:
 
 ::
 
-   apt install redis-server
+   $ sudo apt install redis-server
 
-##### Install requirements and clone the project
+Install requirements and clone the project
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
