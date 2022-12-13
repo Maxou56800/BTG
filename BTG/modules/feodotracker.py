@@ -60,7 +60,7 @@ class feodotracker():
             return status
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Search in FeodoTracker ...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in FeodoTracker ...")
         url = "https://feodotracker.abuse.ch/downloads/"
         paths = [
             "ipblocklist.csv",

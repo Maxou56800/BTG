@@ -70,7 +70,7 @@ class Misp:
             self.Search(misp_url, misp_key, indice)
 
     def Search(self, misp_url, misp_key, indice):
-        mod.display(self.module_name, "", "INFO", "Search in misp...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in misp...")
 
         url = '{}attributes/restSearch'.format(misp_url)
         self.headers['Authorization'] = misp_key

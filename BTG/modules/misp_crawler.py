@@ -46,7 +46,7 @@ class Misp_Crawler:
         self.Search()
 
     def Search(self):
-        mod.display(self.module_name, "", "INFO", "Search in misp crawler...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in misp crawler...")
         with requests.Session() as s:
             try:
                 self.loginRequest(s)

@@ -31,7 +31,7 @@ class Signature_base_neo23x0:
         self.search()
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Searching...")
+        mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         url = "https://raw.githubusercontent.com/Neo23x0/signature-base/master/iocs/"
 
         if self.type in ["IPv4", "domain"]:

@@ -318,7 +318,7 @@ class VTSysinternals:
         self.search()
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Search in VirusTotal ...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in VirusTotal ...")
         request = self.searchHash()
         store_request(self.queues, request)
 
@@ -380,9 +380,8 @@ def response_handler(response_text, response_status,
                         "ERROR",
                         "VirusTotal json_response was not readable.")
             return None
-        found = False
-        
 
+        found = False
         for data in json_content["data"]:
             if data["hash"] in whitelisted_hash:
                 continue
@@ -393,7 +392,8 @@ def response_handler(response_text, response_status,
                         "Score: {}/{} | {}".format(get_color(data["positives"]),
                                                data["total"],
                                                data["permalink"])
-                                            )           
+                                            )
+                found = True  
         if not found:
             mod.display(module,
                         ioc,

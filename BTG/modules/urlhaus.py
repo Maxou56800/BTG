@@ -42,7 +42,7 @@ class urlhaus():
         self.search()
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Search in URLhaus ...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in URLhaus ...")
         url = "https://urlhaus.abuse.ch/downloads/"
         paths = [
             "/downloads/csv/"
@@ -78,4 +78,4 @@ class urlhaus():
                                 self.ioc,
                                 "FOUND",
                                 "{} - C2 status: {} - Tags: {}".format(row[7], row[3], row[6]))
-                    return None
+                    #return None

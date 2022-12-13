@@ -61,7 +61,7 @@ class Mwdb:
             self.Search(mwdb_url, mwdb_key, indice)
 
     def Search(self, mwdb_api_url, mwdb_api_key, indice):
-        mod.display(self.module_name, "", "INFO", "Search in MWDB...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in MWDB...")
         if self.type in ["MD5", "SHA1", "SHA256", "SHA512"]:
             search_attribute = self.type.lower()
             search_endpoint = "/api/file"

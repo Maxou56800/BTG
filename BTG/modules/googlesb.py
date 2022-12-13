@@ -48,7 +48,7 @@ class googlesb():
         self.lookup_API()
 
     def lookup_API(self):
-        mod.display(self.module_name, "", "INFO", "Search in Google Safe Browsing ...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in Google Safe Browsing ...")
 
         if 'googlesb_api_keys' in self.config:
             try:

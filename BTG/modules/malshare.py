@@ -40,7 +40,7 @@ class Malshare():
         self.search()
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Searching...")
+        mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         url = "https://malshare.com/"
         if "malshare_api_key" in self.config:
             paths = [

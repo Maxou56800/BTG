@@ -74,7 +74,7 @@ class Cuckoosandbox:
             self.search(api_url, web_url, indice)
 
     def search(self, api_url, web_url, indice):
-        mod.display(self.module_name, "", "INFO", "Searching...")
+        mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         if ("cuckoosandbox_api_url" in self.config and
             "user_agent" in self.config and
             "proxy_host" in self.config and

@@ -49,7 +49,7 @@ class Virustotal:
         self.search()
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Search in VirusTotal ...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in VirusTotal ...")
         try:
             if "virustotal_api_keys" in self.config:
                 try:

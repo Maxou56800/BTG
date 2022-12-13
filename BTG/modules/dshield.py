@@ -45,7 +45,7 @@ class DShield:
         self.Search()
 
     def Search(self):
-        mod.display(self.module_name, "", "INFO", "Search in DShield...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in DShield...")
         
         url = "https://www.dshield.org/api/ip/{}".format(self.ioc)
         request = {

@@ -44,7 +44,7 @@ class Irish():
         self.search()
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Searching...")
+        mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         self.url = "https://iris-h.services/api/v2/search?hash=" + self.ioc
 
         request = {

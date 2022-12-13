@@ -24,8 +24,10 @@ from datetime import datetime
 from os import chmod
 from os.path import exists
 from platform import system
-import redis
+import re
 import sys
+import redis
+import tldextract
 
 from BTG.lib.config_parser import Config
 from BTG.lib.redis_config import init_redis
@@ -39,7 +41,7 @@ class module:
         return None
 
     @classmethod
-    def display(self, module="INIT", ioc="", message_type="DEBUG", string=""):
+    def display(self, research_module="INIT", ioc="", message_type="DEBUG", string=""):
         config = Config.get_instance()
         pidfile_dir = "/tmp/BTG/data"
         pidfile_path = pidfile.exists_pidfile(pidfile_dir)
@@ -51,13 +53,19 @@ class module:
             lockname, dictname = cluster.get_keys(pidfile_path)
 
         if ioc != "":
-            if len(ioc) >= 67:
-                ioc = '%s%s...' % (ioc[:64], colors.NORMAL)
-            ioc_show = "{%s%s%s} " % (colors.INFO, ioc, colors.NORMAL)
+            ioc_display = ioc_formater.clean_ioc(ioc)
+            if len(ioc_display) >= 67:
+                ioc_display = '%s%s...' % (ioc_display[:64], colors.NORMAL)
+            ioc_show = "{%s%s%s} " % (colors.INFO, ioc_display, colors.NORMAL)
         else:
             ioc_show = " "
-        output = "[%s%s%s][%s%s%s]%s%s%s%s" % (colors.MODULE,
-                                               module,
+        current_date = datetime.now().strftime('[%d-%m-%Y %H:%M:%S]')
+        display_date = ""
+        if "display_log_date" in config and config["display_log_date"]:
+            display_date = current_date
+        output = "%s[%s%s%s][%s%s%s]%s%s%s%s" % (display_date,
+                                               colors.MODULE,
+                                               research_module,
                                                colors.NORMAL,
                                                getattr(colors, message_type),
                                                message_type,
@@ -76,7 +84,12 @@ class module:
                     open(log_path, 'a+').close()
                     chmod(log_path, 0o666)
                 f = open(log_path, 'a')
-                output_line = "%s%s\n" % (datetime.now().strftime('[%d-%m-%Y %H:%M:%S]'), output)
+                if config["display_log_date"]:
+                    # Date already writen in output variable
+                    output_line = "{}\n".format(output)
+                else:
+                    output_line = "{}{}\n".format(current_date, output)
+                
                 f.write(output_line)
                 f.close()
             # Logs errors and warning in specific file
@@ -86,8 +99,13 @@ class module:
                     open(log_path, 'a+').close()
                     chmod(log_path, 0o666)
                 f = open(log_path, 'a')
-                f.write("%s%s\n" % (datetime.now().strftime('[%d-%m-%Y %H:%M:%S]'),
-                        output))
+                if config["display_log_date"]:
+                    # Date already writen in output variable
+                    output_line = "{}\n".format(output)
+                else:
+                    output_line = "{}{}\n".format(current_date,
+                                                    output)
+                f.write(output_line)
                 f.close()
             
             # Start redis communication
@@ -96,11 +114,14 @@ class module:
                                      password=redis_password)
             message = {
                 'type': message_type,
+                'ioc': ioc,
                 'string': output
             }
-            c = cluster.edit_cluster(ioc, module, message,
+            c = cluster.edit_cluster(ioc, research_module, message,
                                      conn, lockname, dictname)
-            cluster.print_cluster(c, conn)
+            if "display_group_by_ioc" in config and config["display_group_by_ioc"]:
+                cluster.print_cluster(c, conn)
+                return None
             if message_type == "NOT_FOUND" and not config["display_not_found"]:
                 return None
             elif message_type == "WARNING" and not config["display_warnings"]:
@@ -267,3 +288,24 @@ class colors:
         BOLD = '\033[1m'               # BOLD
         MODULE = '\033[38;5;199m'      # PURPLE
         NB_ERROR = '\033[38;5;9m'      # RED
+
+class ioc_formater:
+
+    def __init__(self):
+        return None
+
+    @classmethod
+    def clean_ioc(self, ioc):
+        try:
+            # Try to clean '.' in domain
+            extracted = tldextract.extract(ioc)
+            orig = ".".join(extracted)
+            new = "[.]".join(extracted)
+            ioc = ioc.replace(orig, new) 
+        except:
+            pass
+        protocole_occurences = re.findall("^[hH][tT][tT][pP]", ioc)
+        if len(protocole_occurences):
+            protocole_occurences
+            ioc = ioc.replace(protocole_occurences[0], "hxxp")    
+        return ioc

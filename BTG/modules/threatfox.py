@@ -23,7 +23,7 @@ from BTG.lib.cache import Cache
 
 class threatfox():
     """
-        URLhaus IOC module
+        ThreatFox IOC search module
     """
     def __init__(self, ioc, type, config, queues):
         self.config = config
@@ -39,7 +39,7 @@ class threatfox():
         self.search()
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Search in THREAT fox ...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in THREAT fox ...")
         url = "https://threatfox.abuse.ch"
         paths = [
             "/export/csv/full/"
@@ -52,12 +52,11 @@ class threatfox():
                         "ERROR",
                         e)
             return None
-
         if content.find(self.ioc) == -1:
             mod.display(self.module_name,
                         self.ioc,
                         "NOT_FOUND",
-                        "Nothing found in URLhause")
+                        "Nothing found in ThreatFox")
             return None
         else:
             try:
@@ -70,6 +69,7 @@ class threatfox():
                 return None
             for row in reader:
                 if row[0][0] == "#":
+                    # Comment in result
                     continue
                 if self.ioc in row[2]:
                     remote_ioc_type = row[4].replace('"', "").strip()

@@ -54,7 +54,7 @@ class Pulsedive:
         self.Search(pulsedive_key)
 
     def Search(self, pulsedive_api_key):
-        mod.display(self.module_name, "", "INFO", "Search in Pulsedive...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in Pulsedive...")
         self.headers["Accept"] = "application/json"
         query = urllib.parse.quote("ioc={}".format(self.ioc))
         url = "https://pulsedive.com/api/explore.php?&pretty=1&limit=1&key={}&q={}".format(pulsedive_api_key, query)

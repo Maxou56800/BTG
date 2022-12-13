@@ -97,7 +97,7 @@ class Viper:
             return False
 
     def Search(self, server, api_key):
-        mod.display(self.module_name, "", "INFO", "Search in Viper ...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in Viper ...")
 
         try:
             if "viper_server" in self.config and "viper_api_key" in self.config:

@@ -41,7 +41,7 @@ class Otx:
         self.Search()
 
     def Search(self):
-        mod.display(self.module_name, "", "INFO", "Search in Alienvault OTX ...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in Alienvault OTX ...")
         try:
             if "otx_api_keys" in self.config:
                 otx = OTXv2(self.config["otx_api_keys"])

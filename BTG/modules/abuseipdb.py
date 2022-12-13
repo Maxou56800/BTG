@@ -53,7 +53,7 @@ class AbuseIPDB:
         self.Search(abuseipdb_key)
 
     def Search(self, abuseipdb_api_key):
-        mod.display(self.module_name, "", "INFO", "Search in AbuseIPDB...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in AbuseIPDB...")
         self.headers["Accept"] = "application/json"
         self.headers["Key"] = abuseipdb_api_key
         url = "https://api.abuseipdb.com/api/v2/check?ipAddress={}".format(self.ioc)

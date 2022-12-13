@@ -48,7 +48,7 @@ class metadefender:
         self.Search()
 
     def Search(self):
-        mod.display(self.module_name, "", "INFO", "Search in MetaDefender ...")
+        mod.display(self.module_name, self.ioc, "INFO", "Search in MetaDefender ...")
         try:
             if 'metadefender_api_keys' in self.config:
                 try:

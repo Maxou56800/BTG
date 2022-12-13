@@ -134,7 +134,7 @@ async def fetch_post(url, session, headers, proxy, data, module, ioc, ioc_type, 
         mod.display(module,
                     ioc,
                     message_type="ERROR",
-                    string="Failed to connect to %s ({})".format(url, e))
+                    string="Failed to connect to {} (Error: {})".format(url, e))
 
 
 def filler(request):

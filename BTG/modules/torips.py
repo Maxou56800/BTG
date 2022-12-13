@@ -37,7 +37,7 @@ class Torips:
         self.search()
 
     def search(self):
-        mod.display(self.module_name, "", "INFO", "Searching...")
+        mod.display(self.module_name, self.ioc, "INFO", "Searching...")
         url = "https://raw.githubusercontent.com/SecOps-Institute/Tor-IP-Addresses/master/"
         paths = [
             "tor-exit-nodes.lst",

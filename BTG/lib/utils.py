@@ -30,7 +30,6 @@ from BTG.lib.config_parser import Config
 
 config = Config.get_instance()
 
-
 class cluster:
     def __init__():
         return None
@@ -66,11 +65,12 @@ class cluster:
             time.sleep(0.1)
 
     def add_cluster(ioc, modules, dictname, conn):
-        cluster = {'ioc': ioc,
-                   'modules': modules,
-                   'nb_module': len(modules),
-                   'messages': []
-                   }
+        cluster = {
+            'ioc': ioc,
+            'modules': modules,
+            'nb_module': len(modules),
+            'messages': []
+        }
         for module in modules:
             if module == "cuckoosandbox":
                 cluster['nb_module'] = cluster['nb_module'] + len(config['cuckoosandbox_api_url']) - 1
@@ -103,18 +103,52 @@ class cluster:
         cluster.release_lock(conn, lockname, locked)
         return c
 
-    def print_cluster(cluster, conn):
-        if not cluster:
+    def allowed_to_display(message_type):
+        if message_type == "FOUND":
+            return True
+        elif message_type == "NOT_FOUND" and config["display_not_found"]:
+            return True
+        elif message_type == "WARNING" and config["display_warnings"]:
+            return True
+        elif message_type == "ERROR" and config["display_errors"]:
+            return True
+        elif message_type == "INFO" and config["display_info"]:
+            return True
+        elif message_type == "DEBUG" and config["debug"]:
+            return True
+        return False
+
+
+    def print_cluster(cluster_elements, conn):
+        if not cluster_elements:
             return None
-        if cluster['nb_module'] == 0:
-            found = False
-            for message in cluster['messages']:
-                if message['type'] == "FOUND":
-                    found = True
-                    #print(message['string'])
-            if found:
+        if cluster_elements['nb_module'] == 0:
+            new_line = False
+            messages = cluster_elements['messages']
+            display_something = False
+            has_found = False
+            for message in messages:
+                if cluster.allowed_to_display(message['type']):
+                    display_something = True
+                    if message["type"] == "FOUND":
+                        has_found = True
+            for message in messages:
+                if message == messages[0] and "ioc" in message and display_something:
+                    ioc_color = "" 
+                    ioc_endcolor = ""
+                    if has_found:
+                        ioc_color = "\033[38;5;10m" # Green
+                        ioc_endcolor = "\033[0m" # ENDC
+                    print("=== IOC: {}{}{} ===".format(
+                                                        ioc_color,
+                                                        message["ioc"],
+                                                        ioc_endcolor))
+                if cluster.allowed_to_display(message['type']):
+                    new_line = True
+                    print(message['string'])
+            if new_line:
                 pass
-                #print('')
+                print('')
 
     def get_clusters(dictname, conn):
         bytes_clusters = conn.lrange(dictname, 0, -1)
@@ -159,7 +193,7 @@ class pidfile:
         try:
             dir_path = pidfile.make_pidfile_dir()
         except:
-            raise OSError("Could not make directory :/tmp/BTG/data")
+            raise OSError("Could not make directory: /tmp/BTG/data")
         file_path = pidfile.exists_pidfile(dir_path)
         if file_path != dir_path:
             # An instance of BTG has been found, we should wait to avoid conflict
