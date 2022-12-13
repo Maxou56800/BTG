@@ -82,6 +82,8 @@ class cluster:
                 cluster['total_module'] = cluster['total_module'] + len(config['misp_url'])
             elif module == "mwdb":
                 cluster['total_module'] = cluster['total_module'] + len(config['mwdb_api_url'])
+            elif module == "opencti":
+                cluster['total_module'] = cluster['total_module'] + len(config['opencti_url'])
             else:
                 cluster['total_module'] = cluster['total_module'] + 1
             cluster['messages'][module] = []

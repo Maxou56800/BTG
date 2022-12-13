@@ -138,7 +138,7 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
             mod.display(module,
                         ioc,
                         "NOT_FOUND",
-                        "Nothing found in MISP:{} database".format(web_url))
+                        "Nothing found in MISP database: {}".format(web_url))
             research_finished(module, ioc)
             return None
     elif response_status == 429:

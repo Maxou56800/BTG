@@ -1,3 +1,4 @@
+name;types;method
 abuseipdb;IPv4,IPv6;Online
 blocklistde;IPv4;Cache
 cuckoosandbox;MD5,SHA256;Onpremises
@@ -15,7 +16,7 @@ metadefender;MD5,SHA1,SHA256,SHA512,domain,URL,IPv4,IPv6;Online
 misp_crawler;MD5,SHA5,domain,IPv4,IPv6,URL,SHA256,SHA512;Online
 misp;MD5,SHA1,domain,IPv4,IPv6,URL,SHA256,SHA512;Onpremises
 mwdb;MD5,SHA1,SHA256,SHA512,URL,domain,IPv4,IPv6;Onpremises
-name;types;method
+opencti;MD5,SHA1,SHA256,URL,domain,IPv4,IPv6;Online
 openphish;domain,URL,IPv4;Cache
 otx;MD5,SHA1,domain,IPv4,IPv6,URL,SHA256;Online
 phishtank;domain,URL,IPv4;Cache

@@ -169,6 +169,8 @@ class module:
                     return False
                 elif module == "viper" and config["viper_is_online_instance"]:
                     return False
+                elif module == "opencti" and config["opencti_is_online_instance"]:
+                    return False
             return True
         elif status == "Online" and not config["offline"]:
             '''
@@ -282,20 +284,24 @@ class colors:
         MODULE = ''
         NB_ERROR = ''
     else:
+        TLP_CLEAR = '\033[0m'          # NOCOLOR
         DEBUG = '\033[38;5;13m'        # LIGHT_MAGENTA
         INFO = '\033[38;5;117m'        # LIGHT_BLUE
         FINISHED = '\033[38;5;117m'    # LIGHT_BLUE
         FOUND = '\033[38;5;10m'        # GREEN
         GOOD = '\033[38;5;10m'         # GREEN
+        TLP_GREEN = '\033[38;5;10m'    # GREEN
         NOT_FOUND = '\033[38;5;11m'    # YELLOW
         WARNING = '\033[38;5;11m'      # YELLOW
         LOW_RISK = '\033[38;5;11m'     # YELLOW
         ERROR = '\033[38;5;202m'       # ORANGE
         MEDIUM_RISK = '\033[38;5;202m' # ORANGE
+        TLP_AMBER = '\033[38;5;202m'   # ORANGE
         SUSPICIOUS = '\033[38;5;202m' # ORANGE
         FATAL_ERROR = '\033[38;5;9m'   # RED
         INFECTED = '\033[38;5;9m'      # RED
         HIGH_RISK = '\033[38;5;9m'     # RED
+        TLP_RED = '\033[38;5;9m'       # RED
         NORMAL = '\033[0m'             # NOCOLOR
         BOLD = '\033[1m'               # BOLD
         MODULE = '\033[38;5;199m'      # PURPLE
