@@ -48,45 +48,46 @@ With API keys
 
 ::
 
+   AbuseIPDB
+   Cuckoo Sandbox
+   GoogleSB
+   HybridAnalysis
+   Malshare
+   MetaDefender
    MISP
    MISP (Crawler)
-   VirusTotal
-   Cuckoo Sandbox
+   MWDB
+   OpenCTI
+   Otx
+   Pulsedive
    Viper
    Virusshare
-   HybridAnalysis
-   GoogleSB
-   MetaDefender
-   Malshare
-   Otx
-   MWDB
-   AbuseIPDB
-   Pulsedive
+   VirusTotal
 
 Without API keys
 ^^^^^^^^^^^^^^^^
 
 ::
 
+   Blocklist.de
+   CybercrimeTracker
+   FeodoTracker
+   FortiguardWebFilter
    IRISH
-   VXVault
+   MalwareBazaar
+   MalwareConfig
+   Openphish
+   PhishTank
+   Signature-base (by @Neo23x0)
    Spamhaus
    SSLBlacklist
-   FeodoTracker
-   MalwareConfig
-   urlHaus
-   Tor (exit/relay)
-   CybercrimeTracker
-   Openphish
    ThreatFox
-   VTSysinternals
-   Signature-base (by @Neo23x0)
-   VXVaultQuery
+   Tor (exit/relay)
+   urlHaus
    urlscan
-   FortiguardWebFilter
-   Blocklist.de
-   MalwareBazaar
-   PhishTank
+   VTSysinternals
+   VXVault
+   VXVaultQuery
 
 Installation
 ~~~~~~~~~~~~
