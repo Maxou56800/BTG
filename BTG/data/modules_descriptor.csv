@@ -34,3 +34,4 @@ virustotal;MD5,SHA1,SHA256,URL,IPv4,domain;Online
 vtsysinternals;SHA256,SHA1;Online
 vxvault;IPv4,domain,URL;Cache
 vxvaultquery;MD5,IPv4;Online
+tweetfeed;MD5,SHA256,IPv4,domain,URL;Cache

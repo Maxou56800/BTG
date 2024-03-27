@@ -28,28 +28,28 @@ def module_worker_request(module, argument, type, queues):
     """
         Load modules in python instance to build url to request
     """
-    mod.display(string="Load: {}{}.py".format(config["modules_folder"], module))
-    obj = importlib.import_module("BTG.modules."+module)
+    mod.display(string=f"Load: {config['modules_folder']}{module}.py")
+    obj = importlib.import_module(f"BTG.modules.{module}")
     for c in dir(obj):
         if module+"_enabled" in config:
             if module == c.lower() and config[module+"_enabled"]:
                 getattr(obj, c)(argument, type, config, queues)
         else:
             mod.display("worker_tasks",
-                        "INFO",
-                        "Module : {} -- not configured".format(module))
+                        message_type="INFO",
+                        string=f"Module : {module} -- not configured")
 
 
 def module_worker_response(response_text, response_status, module,
-                           ioc, ioc_type, server_id):
+                           ioc, ioc_type, server_id=0):
     """
         Load modules in python instance to treat the response
     """
-    obj = importlib.import_module("BTG.modules."+module)
+    obj = importlib.import_module(f"BTG.modules.{module}")
     try:
         obj.response_handler(response_text, response_status,
                              module, ioc, ioc_type, server_id)
     except:
         mod.display("worker_tasks",
-                    "ERROR",
-                    "Something went wrong when worker try to load response_handler from {}".format(module))
+                    message_type="ERROR",
+                    string=f"Something went wrong when worker try to load response_handler from {module}")

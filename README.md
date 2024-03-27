@@ -50,6 +50,7 @@ Many knowledge-bases of malicious known activity (aka [IOC](https://en.wikipedia
     SSLBlacklist
     ThreatFox
     Tor (exit/relay)
+    TweedFeed
     urlHaus
     urlscan
     VTSysinternals

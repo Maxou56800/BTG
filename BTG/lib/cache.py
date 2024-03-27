@@ -28,6 +28,7 @@ import datetime
 import requests
 import sys
 import zipfile
+from time import sleep
 
 from BTG.lib.config_parser import Config
 from BTG.lib.io import module as mod
@@ -102,6 +103,7 @@ class Cache:
     def decompress_zip(self, zip_file):
         if not exists(zip_file):
             return None
+        sleep(1)
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
             zip_ref.extractall(self.extracted_folder)
 

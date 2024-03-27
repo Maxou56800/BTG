@@ -1,8 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright (c) 2016-2017 Conix Cybersecurity
-# Copyright (c) 2017 Alexandra Toussaint
-# Copyright (c) 2017 Robin Marsollier
 #
 # This file is part of BTG.
 #
@@ -21,17 +18,17 @@
 
 from BTG.lib.cache import Cache
 from BTG.lib.io import module as mod
+import json
 
-
-class Vxvault:
+class TweetFeed:
     def __init__(self, ioc, type, config, queues):
         self.config = config
         self.module_name = __name__.split(".")[-1]
-        self.types = ["IPv4", "domain", "URL"]
+        self.types = ["IPv4", "domain", "URL", "MD5", "SHA256"]
         self.search_method = "Online"
-        self.description = "Search domain in VXVault feeds"
-        self.author = "Conix"
-        self.creation_date = "15-09-2016"
+        self.description = "Search IOC in TweetFeed"
+        self.author = "Maxou56800"
+        self.creation_date = "27-03-2024"
         self.type = type
         self.ioc = ioc
 
@@ -45,13 +42,14 @@ class Vxvault:
 
     def search(self):
         mod.display(self.module_name, self.ioc, "INFO", "Searching...")
-        url = "http://vxvault.net/"
+        url = "https://api.tweetfeed.live"
         paths = [
-            "URL_List.php"
+            "/v1/year"
         ]
         for path in paths:
             try:
-                content = Cache(self.module_name, url, path, self.search_method).content
+                req = Cache(self.module_name, url, path, self.search_method)
+                content = req.content
             except NameError as e:
                 mod.display(self.module_name,
                             self.ioc,
@@ -59,17 +57,35 @@ class Vxvault:
                             e)
                 self.research_finished()
                 return None
-            for line in content.split("\n"):
-                if self.ioc in line:
+
+            try:
+                json_content = json.loads(content)
+            except:
+                mod.display(self.module_name,
+                    self.ioc,
+                    "ERROR",
+                    "Unable to parse Json from TweetFeed")
+                return None
+
+            # domain type set
+            feed_type = self.type
+            if self.type == "IPv4":
+                feed_type = "ip"
+            elif self.type in ["MD5", "SHA256", "URL"]:
+                feed_type = self.type.lower()
+            for event in json_content:
+                if event["type"] != feed_type:
+                    continue
+                if self.ioc == event["value"]:
                     mod.display(self.module_name,
                                 self.ioc,
                                 "FOUND",
-                                "%s%s" % (url, path))
+                                f"{', '.join(event['tags'])} | {event['user']}: {event['tweet']}")
                     self.research_finished()
                     return None
         mod.display(self.module_name,
                     self.ioc,
                     "NOT_FOUND",
-                    "Nothing found in vxvault feeds")
+                    "Nothing found in TweedFeed")
         self.research_finished()
         return None
