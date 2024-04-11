@@ -318,8 +318,8 @@ class ioc_formater:
         try:
             # Try to clean '.' in domain
             extracted = tldextract.extract(ioc)
-            orig = ".".join(extracted)
-            new = "[.]".join(extracted)
+            orig = extracted.fqdn
+            new = extracted.fqdn.replace(".", "[.]")
             ioc = ioc.replace(orig, new) 
         except:
             pass

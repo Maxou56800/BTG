@@ -21,7 +21,7 @@ import random
 from BTG.lib.async_http import store_request
 from BTG.lib.config_parser import Config
 from BTG.lib.io import module as mod
-from BTG.lib.io import colors
+from BTG.lib.io import colors, ioc_formater
 
 cfg = Config.get_instance()
 
@@ -102,6 +102,15 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
                         string="AbuseIPDB json_response was not readable.")
             research_finished(module, ioc)
             return None
+        if "isWhitelisted" in json_response["data"] and json_response["data"]["isWhitelisted"]:
+            mod.display(module,
+                    ioc,
+                    "NOT_FOUND",
+                    f"Domain: '{ioc_formater.clean_ioc(json_response['data']['domain'])}' | " + \
+                    f"This addresse IP is clean for AbuseIPDB ({colors.GOOD}Whitelisted{colors.NORMAL}{colors.BOLD})"
+            )            
+            research_finished(module, ioc)
+            return None
         if json_response["data"]["totalReports"] == 0 and json_response["data"]["abuseConfidenceScore"] == 0:
             mod.display(module,
                     ioc,
@@ -112,12 +121,12 @@ def response_handler(response_text, response_status, module, ioc, ioc_type, serv
         mod.display(module,
                     ioc,
                     "FOUND",
-                    "Confidence of abuse is {}% | Total reports: {} from {} distinct users | Details URL: {}".format(
-                        get_color(json_response["data"]["abuseConfidenceScore"]),
-                        get_color(json_response["data"]["totalReports"]),
-                        json_response["data"]["numDistinctUsers"],
-                        "https://www.abuseipdb.com/check/{}".format(ioc)
-                    )
+                    f"Country: {json_response['data']['countryCode']} "+\
+                    f"| Domain: '{ioc_formater.clean_ioc(json_response['data']['domain'])}' "+
+                    f"| Abuse: {get_color(json_response['data']['abuseConfidenceScore'])}% "+
+                    f"| Total reports: {get_color(json_response['data']['totalReports'])} "+ \
+                    f"from {json_response['data']['numDistinctUsers']} distinct users " + \
+                    f"| URL: https://www.abuseipdb.com/check/{ioc}"
         )
         research_finished(module, ioc)
         return None
