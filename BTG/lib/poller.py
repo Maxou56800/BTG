@@ -62,7 +62,7 @@ class poller:
                 time.sleep(1.0 - ((time.time() - starttime) % 1.0))
                 continue
             try:
-                with Connection(Redis()) as conn:
+                with Connection(Redis(redis_host, redis_port, redis_password)) as conn:
                     q = Queue(queue_1, connection=conn)
                 q.enqueue(async_http.request_poller,
                           args=(queue_1, queue_2, len), result_ttl=0)

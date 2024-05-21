@@ -221,8 +221,9 @@ async def run(requests):
 
 def request_poller(queue_1, queue_2, nb_to_do):
     requests = pollout_requests(queue_2, nb_to_do)
+    redis_host, redis_port, redis_password = init_redis()
     try:
-        with Connection(Redis()) as conn:
+        with Connection(Redis(redis_host, redis_port, redis_password)) as conn:
             q = Queue(queue_1, connection=conn)
     except:
         mod.display("ASYNC_HTTP",

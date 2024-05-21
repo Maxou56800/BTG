@@ -1,8 +1,8 @@
 validators==0.20.0
 requests-cache>=1.2.0
 netaddr>=1.2.1
-rq>=1.16.1
-redis>=5.0.3
+rq>=1.16.2
+redis>=5.0.4
 tldextract>=5.1.2
-aiohttp>=3.9.3
-pycti>=6.0.8
+aiohttp>=3.9.5
+pycti>=6.1.3

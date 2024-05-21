@@ -17,7 +17,7 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 import uuid
-
+import os
 from BTG.lib.config_parser import Config
 from BTG.lib.utils import cluster
 
@@ -35,6 +35,12 @@ def init_redis():
         redis_port = config['redis_port']
     if 'redis_password' in config:
         redis_password = config['redis_password']
+    if os.environ.get('REDIS_HOST', None):
+        redis_host = os.environ.get('REDIS_HOST')
+    if os.environ.get('REDIS_PORT', None):
+        redis_host = os.environ.get('REDIS_PORT')
+    if os.environ.get('REDIS_PASSWORD', None):
+        redis_host = os.environ.get('REDIS_PASSWORD')
     return redis_host, redis_port, redis_password
 
 

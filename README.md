@@ -2,7 +2,7 @@
 
 Not every IOC deserve to enter your internal MISP instance, for obvious quality reasons. But it may be usefull for you analyst to be able to do a broader research on IOC published online.
 
-This tool allows you to qualify one or more potential malicious observables of various type (URL, MD5, SHA1, SHA256, SHA512, IPv4, IPv6, domain etc..). You can run this tool with a Linux environement.
+This tool allows you to qualify one or more potential malicious observables of various type (URL, MD5, SHA1, SHA256, SHA512, IPv4, IPv6, domain etc..). You can run this tool with a Linux environement. Windows setup is not tested yet (but you can try docker version).
 
 ![BTG Demo](./img/btg.png)
 
@@ -57,19 +57,32 @@ Many knowledge-bases of malicious known activity (aka [IOC](https://en.wikipedia
     VXVault
     VXVaultQuery
 
-#### Installation
+#### Docker usage
+
+BTG can run inside a Docker container:
+
+```bash
+# Copy the default config
+cp ./BTG/config/btg.cfg custom_config_btg.cfg
+# Edit the configuration
+editor custom_config_btg.cfg
+# Run docker using your configuration and IOCs
+docker compose run --rm -v "$(pwd)"/custom_config_btg.cfg:"/btg.cfg:ro" btg $IOCs
+```
+
+#### Manual installation
 
 ##### Install redis server
 
 BTG needs a redis server. You can install it on the same host: 
 
-```
+```bash
 $ sudo apt install redis-server
 ```
 
 ##### Install requirements and clone the project
 
-```
+```bash
 $ sudo apt update && sudo apt install python3 python3-pip git
 $ git clone https://github.com/conix-security/BTG
 ```
@@ -78,7 +91,7 @@ $ git clone https://github.com/conix-security/BTG
 
 You can install BTG and dependencies inside poetry environnement:
 
-```
+```bash
 $ curl -sSL https://install.python-poetry.org | python3 -
 $ cd BTG
 $ poetry install
@@ -89,7 +102,7 @@ $ poetry run python3 setup.py install
 
 You can install BTG in **/usr/bin/btg** theses commands:
 
-```
+```bash
 $ sudo pip3 install -r requirements.txt
 $ sudo python3 setup.py install
 ```
@@ -98,8 +111,8 @@ $ sudo python3 setup.py install
 
 You need to configure BTG by editing configuration file **btg.cfg** using your favorite editor:
 
-```
-$ vim ~/.config/BTG/btg.cfg
+```bash
+$ editor ~/.config/BTG/btg.cfg
 ```
 
 Enable or disable modules using **True**/**False** value, and speciffy API keys for some modules. Carefully read the comments attached to the configuration variables.
@@ -110,7 +123,7 @@ If you use poetry for installation, you can run btg using **poetry run**
 
 Exemple:
 
-```
+```bash
 $ cd BTG
 $ poetry run btg http://mydomain.com 1a72dca1f6a961f528007ef04b6959d8 45.34.191.173
 ```
@@ -122,7 +135,7 @@ $ btg http://mydomain.com 1a72dca1f6a961f528007ef04b6959d8 45.34.191.173
 
 #### Help
 
-```
+```bash
 usage: btg [-h] [-d] [-o] [-s] [-e] [-j] observable [observable ...]
 
 Observable to qualify
@@ -143,7 +156,7 @@ options:
 
 If you need to use a specific config file for searching your IOCs, use the environment variable **BTG_CONFIG**:
 
-```
+```bash
 $ BTG_CONFIG="/my/custom/btg.cfg" btg
 ```
 

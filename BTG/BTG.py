@@ -51,7 +51,7 @@ from BTG.lib.utils import cluster, pidfile, redis_utils
 from BTG.lib.worker_tasks import module_worker_request
 
 config = Config.get_instance()
-version = "2.4"     # BTG version
+version = "2.5"     # BTG version
 
 
 class BTG():
