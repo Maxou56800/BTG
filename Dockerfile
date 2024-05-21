@@ -8,6 +8,8 @@ RUN pip install poetry
 
 COPY . /app/
 
+RUN poetry lock --no-update
+
 RUN poetry install
 
 RUN poetry run python setup.py install
